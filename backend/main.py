@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 import time
 
 
@@ -41,15 +42,37 @@ def scrape_flipkart():
     options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get("https://www.flipkart.com/")
-    time.sleep(10)
+
     print(driver)
     print(driver.title)
-    time.sleep(10)
-    # closeButton = driver.find_element(By.CLASS_NAME,"_2KpZ6l _2doB4z")
-    # print(closeButton)
-    time.sleep(10)
-    searchButton = driver.find_element(By.CLASS_NAME,"Pke_EE")
-    print(searchButton)
+    time.sleep(5)
+
+    # Close Popup if it's there
+    try:
+        print("trying to close")
+        driver.find_element(By.CLASS_NAME, "_2doB4z").send_keys(Keys.ENTER)
+    except:
+        pass
+    
+    # Search for the product
+    try:
+        print("trying to search")
+        driver.find_element(By.CLASS_NAME,"_3704LK").send_keys("tshirt")
+    except:
+        try:
+            driver.find_element(By.CLASS_NAME,"Pke_EE").send_keys("tshirt")
+        except:
+            pass
+    
+    try:
+        driver.find_element(By.CLASS_NAME,"L0Z3Pu").send_keys(Keys.ENTER)
+    except:
+        try:
+            driver.find_element(By.CLASS_NAME,"_2iLD__").send_keys(Keys.ENTER)
+        except:
+            pass
+
+    time.sleep(5)
     driver.close()
     # return {}
 
