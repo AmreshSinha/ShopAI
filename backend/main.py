@@ -1,3 +1,10 @@
+# TODO: (STATUS: DITCHED) Browser Extension for tracking user's flipkart browsing session and purchase history
+# TODO: Discuss on showing extra Product Details like size, color, etc
+# TODO: Filter (Budget, Brand, Size, Color, etc)
+# TODO: Improve tagging using chain of thought prompting
+# TODO: Social Media Trends using https://github.com/acheong08/EdgeGPT
+# TODO: Switch over to official OpenAI API
+
 from typing import Union
 
 from fastapi import FastAPI
@@ -12,7 +19,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 
-
+import json
 
 chatbot = Chatbot(config={
   "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJzd2NpaXRnaHlAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsidXNlcl9pZCI6InVzZXItdDkydFZ2UVducDgyQUlHZ2Z4bEM2MmpUIn0sImlzcyI6Imh0dHBzOi8vYXV0aDAub3BlbmFpLmNvbS8iLCJzdWIiOiJnb29nbGUtb2F1dGgyfDExMzQxNDkyNDM2MjMxNzQ4OTAxMCIsImF1ZCI6WyJodHRwczovL2FwaS5vcGVuYWkuY29tL3YxIiwiaHR0cHM6Ly9vcGVuYWkub3BlbmFpLmF1dGgwYXBwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE2OTA4NzA1MDAsImV4cCI6MTY5MjA4MDEwMCwiYXpwIjoiVGRKSWNiZTE2V29USHROOTVueXl3aDVFNHlPbzZJdEciLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIG1vZGVsLnJlYWQgbW9kZWwucmVxdWVzdCBvcmdhbml6YXRpb24ucmVhZCBvcmdhbml6YXRpb24ud3JpdGUgb2ZmbGluZV9hY2Nlc3MifQ.pJL7L1WMfymxNvfFjMUmej-4y5syM8CIVEy9e6JU_mCXkTttJBjHysWyARePFDzp8nNxKYjYRpyYa08v6JhPLoaSOmWSBCP5LI2_MW7lp23ET2CyAmPZLvg5HiwVH-JaXYHsSvlPxRPsJ68aJBE59pr4bXFV3gYa_o-A7pbtBw0RZcOWgYrJU2E4dgCWQyJ-vgbBLgv7gIbo9HmNqfvid-rXJjGvoYeJlmgCcv8dQ7ROA3RyC2PdvBlwY--37AldIw6AUMAi_Hr7LdvOTsw-vO8zebo4C263kZqDpzbar5BkMH6d5caojOlaGg85TXCs1JkYUiCYvetH1-C1D4YmgA"
@@ -23,58 +30,49 @@ browsing_history = ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Soli
 
 app = FastAPI()
 
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Union[bool, None] = None
-
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
+def get_product_details(product_link:str,driver):
+    driver.get(product_link)
+    time.sleep(2)
+    return {}
+
 @app.get("/items")
-def scrape_flipkart():
+def scrape_flipkart(search: str):
     options = Options()
-    # options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--headless')
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get("https://www.flipkart.com/")
+    driver.get(f"https://www.flipkart.com/search?q={search}")
 
-    print(driver)
-    print(driver.title)
-    time.sleep(5)
-
-    # Close Popup if it's there
+    # Get the product from flipkart
     try:
-        print("trying to close")
-        driver.find_element(By.CLASS_NAME, "_2doB4z").send_keys(Keys.ENTER)
+        product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
+        product_description={}
+        for product_card in product_cards:
+            try:
+                if (product_card.find_element(By.CLASS_NAME, "_2I5qvP").find_element(By.TAG_NAME, "span").text):
+                    print("Sponsored")
+            except:
+                product_description["product_link"] = str(product_card.find_element(By.TAG_NAME, "a").get_attribute("href"))
+                product_description["product_name"] = str(product_card.find_element(By.CLASS_NAME, "IRpwTa").text)
+                product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
+                product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
+                break
     except:
+        print("Outer except")
         pass
-    
-    # Search for the product
-    try:
-        print("trying to search")
-        driver.find_element(By.CLASS_NAME,"_3704LK").send_keys("tshirt")
-    except:
-        try:
-            driver.find_element(By.CLASS_NAME,"Pke_EE").send_keys("tshirt")
-        except:
-            pass
-    
-    try:
-        driver.find_element(By.CLASS_NAME,"L0Z3Pu").send_keys(Keys.ENTER)
-    except:
-        try:
-            driver.find_element(By.CLASS_NAME,"_2iLD__").send_keys(Keys.ENTER)
-        except:
-            pass
 
-    time.sleep(5)
+    time.sleep(2)
+    get_product_details(product_description["product_link"],driver)
     driver.close()
-    # return {}
+    print(product_description)
+    return json.dumps(product_description) 
 
 @app.get("/deleteChat")
 def deleteChat():
