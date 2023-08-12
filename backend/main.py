@@ -40,7 +40,7 @@ def scrape_flipkart():
     # options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome()
     driver.get("https://www.flipkart.com/")
 
     print(driver)
@@ -60,20 +60,31 @@ def scrape_flipkart():
         driver.find_element(By.CLASS_NAME,"_3704LK").send_keys("tshirt")
     except:
         try:
+            print("input tag")
             driver.find_element(By.CLASS_NAME,"Pke_EE").send_keys("tshirt")
         except:
             pass
-    
+    # //*[@id="container"]/div/div[3]/div[1]/div[2]/div[2]/div
     try:
         driver.find_element(By.CLASS_NAME,"L0Z3Pu").send_keys(Keys.ENTER)
+        time.sleep(5);
+        print(driver.find_element(By.XPATH,'''/html/body/div/div/div[3]/div/div[1]/div/div/div/section[7]/div[4]/div[1]/select'''))
+        print("gbkjdfhg")
+        # print(driver.find_element(By.XPATH,'''//*[@id="container"]/div/div[3]/div[1]/div[2]/div[2]/div'''))
+        # print(driver.find_element(By.XPATH,'''//*[@id="container"]/div/div[3]/div/div[1]/div/div/div/section[7]/div[4]/div[1]/select''').find_element(By.TAG_NAME, 'option'))
     except:
         try:
+            print("2nd button")
             driver.find_element(By.CLASS_NAME,"_2iLD__").send_keys(Keys.ENTER)
+            time.sleep(5);
+            print(driver.find_element(By.XPATH,'''/html/body/div/div/div[3]/div/div[1]/div/div/div/section[7]/div[4]/div[1]/select'''))
+            print("gbkjdfhg")
+            # print(driver.find_element(By.XPATH,'''//*[@id="container"]/div/div[3]/div[1]/div[2]/div[2]/div'''))
         except:
             pass
 
     time.sleep(5)
-    driver.close()
+    # driver.close()
     # return {}
 
 @app.get("/deleteChat")
