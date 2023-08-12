@@ -1,15 +1,17 @@
 .app-wrapper {
     min-height: 110vh;
     background-image: var(--dark, linear-gradient(90deg, #2A2C46 0%, #6A445D 100%));
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .title-text{
     font-family: Helvetica;
-    font-size: 48px;
+    font-size: 3rem;
     font-style: normal;
     font-weight: 700;
     opacity: 0.8;
-    padding-top: 24rem;
     display: flex;
     justify-content: center;
     background-color: #f3ec78;

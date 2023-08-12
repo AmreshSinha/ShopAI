@@ -9,8 +9,10 @@ import { AiSearchBar } from "../../components/Home/searchBar";
 export default function Home() {
   return (
     <div className='app-wrapper'>
+      <div>
       <div className="title-text">ShopAI will help you plan an outfit</div>
       <AiSearchBar/>
+      </div>
     </div>
   );
 }
