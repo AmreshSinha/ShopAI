@@ -11,6 +11,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from revChatGPT.V1 import Chatbot
+import os
+import openai
+from dotenv import load_dotenv
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -31,6 +34,8 @@ browsing_history = ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Soli
 
 app = FastAPI()
 
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 origins = ["http://localhost:5173"]
 
@@ -52,15 +57,65 @@ def get_product_details(product_link:str,driver):
     time.sleep(2)
     return {}
 
-@app.get("/items/{userQuery}")
-def scrape_flipkart(userQuery):
+@app.post("/items")
+def scrape_flipkart(userQuery:str):
+    
+    BASE_PROMPT = "You are a fashion expert at Flipkart which is an online e commerce site and your role is to recommend good outfits to people according to their preferences. You have access to some data about the people like their previous purchases, browsing history, gender, age, location etc. People may also specify the occasion for which they might want a outfit for. If the occasion is not specified you are supposed to ask for the occasion before giving the result. You have to understand the customer's preferences from the data given and recommend outfits for the occasion keeping in mind the location , gender, age of the user as well as the current trends. You also need to take care of the customer's preferred style , color and brand. Make sure the outfit recommendations are complete and well coordinated including clothing,accessories and footwear. Also if the user doesn't specify any budget do ask for it before recommending. You may also be given the current date in the data and you need to use your knowledge of events or festivals in India near this date to recommend outfits. While generating the response think step by step. Answer the following questions before generating any response. \n 1. What is the type of the occasion for which the user is searching for a outfit. Whether it is formal, informal, traditional event etc. What is the significance of the occasion and what kind of clothes do people usually wear to such events \n 2. What do you understand about the user's preferences from his purchasing and browsing history. \n3. What do you understand from the data given about the current trends. Is the data about current trends relevant while recommending outfit for the occasion given by the user. Do the trends lie in line with type of occasion or should the trends be ignored.\n 4. What would be an approximate price of each component of the outfit recommended. \nUse the answers to these questions while recommending outfits. Instructions for input and output will be given in the next prompt. Donot reply to this prompt."
+
+    RESPONSE_INSTRUCTION = '''An example input would be :
+    {
+    "past_purchases": ["Men Solid Round Neck Polyester White T-Shirt", "Flip Flops  (Black 9)"],
+    "browsing_history":  ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Puma Unisex-Adult Jog V3 Flip-Flop"],
+    “gender” : “male”,
+    “trends”: ["Jockey 9426 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Jockey 9411 Men's Super Combed Cotton Rich Straight Fit Solid Shorts with Side Pockets"]
+    “Specific_request”: “Please recommend only cotton clothes”
+    “location” : “Mumbai”
+    “Date”: “10th June”
+    }
+    If any of the fields are not given in the input ignore them.
+    For the output the output should always be given as a json object. If you are asking an additional question make sure to give it as a json object like:
+    {
+    “question”: “What is your budget”
+    }
+    While recommending outfits return it as a json object. Along with the recommendation also return the budget and gender of the user Example of a outfit recommendation would be:
+    {
+    “recommendation”:  ['black colored full sleeved chinos','Red Sport Shoes'],
+    “budget”: 5000
+    “gender”: “male”
+    }
+    Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending clothes.
+    You are strictly not supposed to return any other than the json object. Strictly donot reply to the prompt. The users requirements will follow next '''
+
+    messages = [
+        {
+            "role" : "user",
+            "content":BASE_PROMPT
+        },
+        {
+            "role": "system",
+            "content": "Understood"
+        },
+        {
+            "role":"user",
+            "content": RESPONSE_INSTRUCTION
+        },
+        {
+            "role": "system",
+            "content": "Understood"
+        },
+        {
+            "role": "user", 
+            "content": userQuery
+        }
+    ]
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
+    # Call ChatGPT for flipkart search
+    print(chat_completion)
     options = Options()
     options.add_argument('--headless')
     # options.add_argument('--no-sandbox')
     # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
-    # Call ChatGPT for flipkart search
     chatGPTresponse = ["Red Anime Shirt","Black Ripped Pant","Superhero Sneakers"]
 
     response=[]
@@ -99,11 +154,5 @@ def deleteChat():
 
 @app.post("/chat")
 def chat(prompt: str):
-    response = ""
-    for data in chatbot.ask(
-            prompt
-    ):
-        global convo_id
-        convo_id = data["conversation_id"]
-        response = data["message"]
-    return {"response": response}
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=[{"role": "user", "content": "Hello world"}])
+    return chat_completion
