@@ -3,7 +3,9 @@ import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 import './searchBar.css';
 
-export function AiSearchBar() {
+export function AiSearchBar({setAskedQuery}) {
+    const [searchQuery, setSearchQuery] = useState("");
+
     const filterData = (query, data) => {
         console.log(query,data);
         if (query.length===0) {
@@ -24,7 +26,14 @@ export function AiSearchBar() {
         "Rio de Janeiro",
         "Dublin"
     ];
-    const [searchQuery, setSearchQuery] = useState("");
+
+    function handleSubmit(event){
+        console.log(event);
+        event.preventDefault();
+        console.log(searchQuery);
+        setAskedQuery(searchQuery);
+    }
+
     const dataFiltered = filterData(searchQuery, data);
 
     return (
@@ -32,10 +41,12 @@ export function AiSearchBar() {
             <img src="/describe-outfit.svg" style={{"width" : "15vw"}}/>
             <div className="search-wrapper" >
             <div>
-            <IconButton type="submit" aria-label="search">
-                <SearchIcon style={{ fill: "black", fontSize: "1.5rem", margin: "0px" }} />
-            </IconButton>
-            <input type="text" className="text-field" autoFocus value={searchQuery} onInput={e => setSearchQuery(e.target.value)}/>
+            <form onSubmit={handleSubmit}>
+                <IconButton type="submit" aria-label="search">
+                    <SearchIcon style={{ fill: "black", fontSize: "1.5rem", margin: "0px" }} />
+                </IconButton>
+                <input type="text" className="text-field" autoFocus value={searchQuery} onInput={e => setSearchQuery(e.target.value)}/>
+            </form>
             </div>
             <div style={{"height" : "1px","opacity" : "0.2", "backgroundColor" : "black","margin" : "0.5rem 0rem"}}></div>
             <div style={{ padding: 3 }}>
