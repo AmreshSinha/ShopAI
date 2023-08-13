@@ -8,6 +8,7 @@
 from typing import Union
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from revChatGPT.V1 import Chatbot
 
@@ -31,6 +32,16 @@ browsing_history = ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Soli
 app = FastAPI()
 
 
+origins = ["http://localhost:5173"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -41,38 +52,45 @@ def get_product_details(product_link:str,driver):
     time.sleep(2)
     return {}
 
-@app.get("/items")
-def scrape_flipkart(search: str):
+@app.get("/items/{userQuery}")
+def scrape_flipkart(userQuery):
     options = Options()
     options.add_argument('--headless')
     # options.add_argument('--no-sandbox')
     # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(f"https://www.flipkart.com/search?q={search}")
 
-    # Get the product from flipkart
-    try:
-        product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
-        product_description={}
-        for product_card in product_cards:
-            try:
-                if (product_card.find_element(By.CLASS_NAME, "_2I5qvP").find_element(By.TAG_NAME, "span").text):
-                    print("Sponsored")
-            except:
-                product_description["product_link"] = str(product_card.find_element(By.TAG_NAME, "a").get_attribute("href"))
-                product_description["product_name"] = str(product_card.find_element(By.CLASS_NAME, "IRpwTa").text)
-                product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
-                product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
-                break
-    except:
-        print("Outer except")
-        pass
+    # Call ChatGPT for flipkart search
+    chatGPTresponse = ["Red Anime Shirt","Black Ripped Pant","Superhero Sneakers"]
 
-    time.sleep(2)
-    get_product_details(product_description["product_link"],driver)
+    response=[]
+
+    # Get the products from flipkart
+    for search_query in chatGPTresponse:
+        try:
+            driver.get(f"https://www.flipkart.com/search?q={search_query}")
+            product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
+            product_description={}
+            for product_card in product_cards:
+                try:
+                    if (product_card.find_element(By.CLASS_NAME, "_2I5qvP").find_element(By.TAG_NAME, "span").text):
+                        print("Sponsored")
+                except:
+                    product_description["product_link"] = str(product_card.find_element(By.TAG_NAME, "a").get_attribute("href"))
+                    product_description["product_name"] = str(product_card.find_element(By.CLASS_NAME, "IRpwTa").text)
+                    product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
+                    product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
+                    break
+            response.append(product_description)
+        except:
+            print("Outer except")
+            pass
+
+    # get_product_details(product_description["product_link"],driver)
     driver.close()
-    print(product_description)
-    return json.dumps(product_description) 
+    print(response)
+    return json.dumps(response);
+
 
 @app.get("/deleteChat")
 def deleteChat():
