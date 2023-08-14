@@ -1,0 +1,20 @@
+.chatbar-wrapper{
+    display: inline-block;
+    padding: 0.5rem;
+    opacity: 0.8;
+    background-color: white;
+    border-radius: 1rem;
+    width: 36vw;
+}
+
+.text-field{
+    outline: none;
+    border: none;
+    font-family: Helvetica;
+    font-size: 1.25rem;
+}
+
+.filtered-text{
+    font-family: Helvetica;
+    font-size: 1.25rem;
+}
