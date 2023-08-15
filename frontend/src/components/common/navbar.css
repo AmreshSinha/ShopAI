@@ -1,0 +1,17 @@
+.navbar{
+    background-color: #262626;
+    height: 3rem;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-logo{
+    color: #FFF;
+    font-family: Karla;
+    font-size: 1.5rem;
+    font-style: normal;
+    font-weight: 800;
+    line-height: normal;
+}
