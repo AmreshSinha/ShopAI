@@ -43,12 +43,13 @@ table {
 }
 
 @font-face {
-  font-family: 'Helvetica';
-  src: local('Helvetica'), url(./fonts/FreeSans.ttf) format('truetype');
+  font-family: 'Karla Variable';
+  src: local('Karla Variable'), url(./fonts/Karla-VariableFont_wght.ttf) format('truetype');
 }
 
 html {
   font-size: 16px;
+  font-family: 'Karla Variable', sans-serif;
 }
 @media (max-width: 900px) {
   html { font-size: 14px; }

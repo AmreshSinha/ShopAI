@@ -7,7 +7,6 @@ import { AiSearchBar } from "../components/Home/searchBar";
 import { ResponseWrapper } from "../components/Home/responseWrapper";
 
 export function HomeScreen() {
-    console.log("JFJSKJFKDS");
   let [askedQuery, setAskedQuery] = useState(null);
   console.log(askedQuery);
   return (
