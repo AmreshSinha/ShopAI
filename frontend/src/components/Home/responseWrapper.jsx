@@ -3,6 +3,7 @@ import { ResponseTile } from "./responseTile";
 import './responseWrapper.css';
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
+
 export function ResponseWrapper ({askedQuery}){
     const sampleResponse = [
         {"product_link": "https://www.flipkart.com/anime-printed-typography-men-round-neck-red-t-shirt/p/itm29b6e8e150523?pid=TSHGRWKZMVYEDGVY&lid=LSTTSHGRWKZMVYEDGVYRT2QWP&marketplace=FLIPKART&q=Red+Anime+Shirt&store=clo%2Fash%2Fank%2Fedy&srno=s_1_3&otracker=search&iid=64a4f9d2-c7dd-4e9a-bac7-0c97aad974c3.TSHGRWKZMVYEDGVY.SEARCH&ssid=hk1im3eycw0000001692032407275&qH=84f370617203b766",
