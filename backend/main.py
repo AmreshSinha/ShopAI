@@ -185,10 +185,10 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
     if "question" in gpt_response:
-        messages.append({'role' : 'assistant','content' : gpt_response["question"]})
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
         return gpt_response
     else:
-        messages.append({'role' : 'assistant','content' : gpt_response["recommendation"]})
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["recommendation"])})
     # Call ChatGPT for flipkart search
     print(chat_completion)
     options = Options()
