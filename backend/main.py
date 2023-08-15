@@ -85,22 +85,24 @@ To specify the user's details you will be given a RFC8259 compliant json object 
 		  "user_request" : "Suggest an outfit for a diwali party"
 		  "user_instructions" : "Don't Suggest slim fit clothes",
 		  "location" : "Mumbai",
-		  "date": "10/08/2023"
+		  "date": "10/08/2023",
+          "age": "23"
 		  "budget"  : "5000"
         	}
 	'''
 
 Let us call this the USER_REQUEST_FORMAT.
 The explanations for the value of the keys in the User request JSON Object given in the USER_REQUEST_FORMAT format can be found below.
-	"past_purchases" : This will be an array of previous purchases of outfit items. use this to understand user's outfit preference strictly
-          	"browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
-          "gender" : This value represents the gender of the user.
-          "trends" : This will be an array containing clothing categories currently trending among people.
-          "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before.
-          "user_instructions" : Some specific instructions from the user about the clothes that they wants. You are strictly supposed to follow these instructions. Do not generate responses that does not follow these instructions. You can ask for clarifications from user by asking questions in the ASSISTANT_QUESTION_FORMAT and try to ask relevant questions only.
-          "location" : User's geographic location.
-          "date": The date when the user makes a request. Use the location field's value and the date provided value to decide recommendations which can be worn in the weather in that location around this date. Also look for major events around that date in that location and make suggestions accordingly.
-budget : This value determines the budget of the user. If this value doesn’t exist in the json object take its default value to be 10000.
+	    "past_purchases" : This will be an array of previous purchases of outfit items. use this to understand user's outfit preference strictly
+        "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
+        "gender" : This value represents the gender of the user.
+        "trends" : This will be an array containing clothing categories currently trending among people.
+        "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before.
+        "user_instructions" : Some specific instructions from the user about the clothes that they wants. You are strictly supposed to follow these instructions. Do not generate responses that does not follow these instructions. You can ask for clarifications from user by asking questions in the ASSISTANT_QUESTION_FORMAT and try to ask relevant questions only.
+        "location" : User's geographic location.
+        "date": The date when the user makes a request. Use the location field's value and the date provided value to decide recommendations which can be worn in the weather in that location around this date. Also look for major events around that date in that location and make suggestions accordingly.
+        "age": The age of the user
+        "budget" : This value determines the budget of the user. If this value doesn’t exist in the json object take its default value to be 10000.
           
 If you wish to ask any question to the user. ask it as a RFC8259 compliant json object in  ASSISTANT_QUESTION_FORMAT format specified before.
 
@@ -148,7 +150,8 @@ def chatgpt_query(userQuery):
     messages.append({'role' : 'user','content' : userQuery})
     response = openai.ChatCompletion.create(
     model="gpt-3.5-turbo",
-    messages=messages)
+    messages=messages,
+    temperature=0)
     print(response['choices'][0]['message']['content'])
     gpt_response = json.loads(response['choices'][0]['message']['content'])
     print(gpt_response)
@@ -160,57 +163,31 @@ def chatgpt_query(userQuery):
     
 
 @app.get("/items/{userQuery}")
-def scrape_flipkart(userQuery:str):
-    
-    BASE_PROMPT = "You are a fashion expert at Flipkart which is an online e commerce site and your role is to recommend good outfits to people according to their preferences. You have access to some data about the people like their previous purchases, browsing history, gender, age, location etc. People may also specify the occasion for which they might want a outfit for. If the occasion is not specified you are supposed to ask for the occasion before giving the result. You have to understand the customer's preferences from the data given and recommend outfits for the occasion keeping in mind the location , gender, age of the user as well as the current trends. You also need to take care of the customer's preferred style , color and brand. Make sure the outfit recommendations are complete and well coordinated including clothing,accessories and footwear. Also if the user doesn't specify any budget do ask for it before recommending. You may also be given the current date in the data and you need to use your knowledge of events or festivals in India near this date to recommend outfits. While generating the response think step by step. Answer the following questions before generating any response. \n 1. What is the type of the occasion for which the user is searching for a outfit. Whether it is formal, informal, traditional event etc. What is the significance of the occasion and what kind of clothes do people usually wear to such events \n 2. What do you understand about the user's preferences from his purchasing and browsing history. \n3. What do you understand from the data given about the current trends. Is the data about current trends relevant while recommending outfit for the occasion given by the user. Do the trends lie in line with type of occasion or should the trends be ignored.\n 4. What would be an approximate price of each component of the outfit recommended. \nUse the answers to these questions while recommending outfits. Instructions for input and output will be given in the next prompt. Donot reply to this prompt."
+def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_date:str,userQuery:str):
 
-    RESPONSE_INSTRUCTION = '''An example input would be :
-    {
-    "past_purchases": ["Men Solid Round Neck Polyester White T-Shirt", "Flip Flops  (Black 9)"],
-    "browsing_history":  ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Puma Unisex-Adult Jog V3 Flip-Flop"],
-    “gender” : “male”,
-    “trends”: ["Jockey 9426 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Jockey 9411 Men's Super Combed Cotton Rich Straight Fit Solid Shorts with Side Pockets"]
-    “Specific_request”: “Please recommend only cotton clothes”
-    “location” : “Mumbai”
-    “Date”: “10th June”
-    }
-    If any of the fields are not given in the input ignore them.
-    For the output the output should always be given as a json object. If you are asking an additional question make sure to give it as a json object like:
-    {
-    “question”: “What is your budget”
-    }
-    While recommending outfits return it as a json object. Along with the recommendation also return the budget and gender of the user Example of a outfit recommendation would be:
-    {
-    “recommendation”:  ['black colored full sleeved chinos','Red Sport Shoes'],
-    “budget”: 5000
-    “gender”: “male”
-    }
-    Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending clothes.
-    You are strictly not supposed to return any other than the json object. Strictly donot reply to the prompt. The users requirements will follow next '''
-
-    messages = [
-        {
-            "role" : "user",
-            "content":BASE_PROMPT
-        },
-        {
-            "role": "system",
-            "content": "Understood"
-        },
-        {
-            "role":"user",
-            "content": RESPONSE_INSTRUCTION
-        },
-        {
-            "role": "system",
-            "content": "Understood"
-        },
-        {
-            "role": "user", 
-            "content": userQuery
+    user_requests = {
+		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
+		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
+		  "gender" : gender,
+		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
+		  "user_request" : userQuery,
+		  "user_instructions" : user_instructions,
+		  "location" : location,
+		  "date": curr_date,
+		  "budget"  : "10000"
         }
-    ]
+    user_message = {
+        "role": "user",
+        "content": json.dumps(user_requests)
+    }
+    messages.append(user_message)
     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
+    gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
+    if "question" in gpt_response:
+        messages.append({'role' : 'assistant','content' : gpt_response["question"]})
+        return gpt_response
+    else:
+        messages.append({'role' : 'assistant','content' : gpt_response["recommendation"]})
     # Call ChatGPT for flipkart search
     print(chat_completion)
     options = Options()
@@ -218,7 +195,7 @@ def scrape_flipkart(userQuery:str):
     # options.add_argument('--no-sandbox')
     # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    chatGPTresponse = ["Red Anime Shirt","Black Ripped Pant","Superhero Sneakers"]
+    chatGPTresponse = gpt_response["recommendation"]
 
     response=[]
 
@@ -246,7 +223,7 @@ def scrape_flipkart(userQuery:str):
     # get_product_details(product_description["product_link"],driver)
     driver.close()
     print(response)
-    return json.dumps(response);
+    return response
 
 
 # @app.get("/deleteChat")
