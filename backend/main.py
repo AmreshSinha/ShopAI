@@ -156,9 +156,9 @@ def chatgpt_query(userQuery):
     gpt_response = json.loads(response['choices'][0]['message']['content'])
     print(gpt_response)
     if "question" in gpt_response:
-        messages.append({'role' : 'assistant','content' : gpt_response["question"]})
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
     else:
-        messages.append({'role' : 'assistant','content' : gpt_response["recommendation"]})
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["recommendation"])})
     return gpt_response
     
 
@@ -182,6 +182,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     }
     messages.append(user_message)
     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
+    print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
     if "question" in gpt_response:
         messages.append({'role' : 'assistant','content' : gpt_response["question"]})
