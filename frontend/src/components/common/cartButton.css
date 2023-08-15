@@ -1,0 +1,26 @@
+.cart-button {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: #5E5E5E;
+    border-radius: 0.5rem;
+    color: #ffffff;
+}
+
+button{
+    color: #ffffff;
+    font-family: Karla;
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+}
+
+button:disabled{
+    color: #A1A0A1;
+    font-family: Karla;
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+}
