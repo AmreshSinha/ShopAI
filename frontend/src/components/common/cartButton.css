@@ -9,7 +9,6 @@
 
 button{
     color: #ffffff;
-    font-family: Karla;
     font-size: 1rem;
     font-style: normal;
     font-weight: 500;
@@ -18,7 +17,6 @@ button{
 
 button:disabled{
     color: #A1A0A1;
-    font-family: Karla;
     font-size: 1rem;
     font-style: normal;
     font-weight: 500;
