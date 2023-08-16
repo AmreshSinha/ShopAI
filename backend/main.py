@@ -66,7 +66,7 @@ The value of the key "question" in  ASSISTANT_QUESTION_FORMAT should contain the
 "budget": "5000",
 "gender": "Male",
 "occasion": "Diwali Party"
-"assistant_notes": "The user wants a outfit for a diwali party which is an traditional event hence the clothes recommended must be traditional"
+"assistant_notes": "The user wants a outfit for a diwali party which is an traditional event hence the clothes recommended must be traditional",
 }
 '''
 The explanation for the values of the keys in ASSISTANT_OUTPUT_FORMAT are as follows:
@@ -97,12 +97,14 @@ The explanations for the value of the keys in the User request JSON Object given
         "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
         "gender" : This value represents the gender of the user.
         "trends" : This will be an array containing clothing categories currently trending among people.
-        "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before.
+        "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before. User may have explained you the purpose of buying to try to use that as occasion for recommending
         "user_instructions" : Some specific instructions from the user about the clothes that they wants. You are strictly supposed to follow these instructions. Do not generate responses that does not follow these instructions. You can ask for clarifications from user by asking questions in the ASSISTANT_QUESTION_FORMAT and try to ask relevant questions only.
         "location" : User's geographic location.
         "date": The date when the user makes a request. Use the location field's value and the date provided value to decide recommendations which can be worn in the weather in that location around this date. Also look for major events around that date in that location and make suggestions accordingly.
         "age": The age of the user
-        "budget" : This value determines the budget of the user. If this value doesn’t exist in the json object take its default value to be 10000.
+        "budget" : "This value determines the budget of the user. if user has specified budget value in earlier messages then, append budget value in your recommended tags strictly \n
+        without any deviation as this will help in efficient searchablity on e-commerce website online. for example: user budget is 5000 then add budget values acoording to approximate prices you have guessed for each outfit component\n
+        'Tshirt for men under 500 <this 500 here will be the approximate price of outfit component you have thought in the total budget>' as a tag recommended. assume 10000 as default total budget if not specified in messages."
           
 If you wish to ask any question to the user. ask it as a RFC8259 compliant json object in  ASSISTANT_QUESTION_FORMAT format specified before.
 
@@ -112,9 +114,10 @@ While generating the response break down the problem into multiple smaller chunk
 1. What is the type of the occasion for which the user is searching a outfit. occasion may be formal, informal, traditional or casual or something else. What is the significance of the occasion and what kind of clothes do people usually wear on such occasions.
 2. What do you understand about the user's preferences from his purchasing history and browsing history. What are his preferred brands and clothing style.
 3. What do you understand from the data given about the current trends. Is the data about current trends relevant while recommending outfit for the occasion given by the user. Do the trends is relevant for occasion or should the trends be ignored?
-4. What would be an approximate price of each component of the outfit recommended?
+4. What would be an approximate price of each component of the outfit recommended? and how much should be the approximate price for each component to fit in user total budget
 5. If a user requests outfit like some personality. First think about who may be that personality and what kind of clothes does that personality usually wear and then think of some options.
 6. What are some important events/festivals around the date specified in the request in the location of the user and what outfit style may be followed. What is the usual weather at that time at that location and what kind of clothes can be worn in that weather.
+
 Add the answers to the above questions in the "assistant_notes" field of the ASSISTANT_OUTPUT_FORMAT format while generating the output.
 Use the answers to these questions to recommend the outfits to the user. Do not recommend something which violates the answers of the questions given above. Make sure the outfit recommendations are complete and well coordinated including clothing,accessories and footwear.
 
@@ -152,13 +155,18 @@ def chatgpt_query(userQuery):
     model="gpt-3.5-turbo",
     messages=messages,
     temperature=0)
-    print(response['choices'][0]['message']['content'])
+    #print(response['choices'][0]['message']['content'])
     gpt_response = json.loads(response['choices'][0]['message']['content'])
     print(gpt_response)
     if "question" in gpt_response:
+        print(gpt_response["question"])
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
-    else:
+    elif "recommendation" in gpt_response:
+        print(gpt_response["recommendation"])
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["recommendation"])})
+    else:
+        print(gpt_response)
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response)})
     return gpt_response
     
 
@@ -176,32 +184,41 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
 		  "date": curr_date,
 		  "budget"  : "10000"
         }
+    
     user_message = {
         "role": "user",
         "content": json.dumps(user_requests)
     }
+
     messages.append(user_message)
     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
+    print(gpt_response);
     if "question" in gpt_response:
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
         return gpt_response
-    else:
+    elif "recommendation" in gpt_response:
+        print(gpt_response["recommendation"])
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["recommendation"])})
+    elif type(gpt_response)==list:
+        print(gpt_response)
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response)})
+    else:
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response)})
+        return {"question" : gpt_response}
     # Call ChatGPT for flipkart search
-    print(chat_completion)
+    # print(chat_completion)
     options = Options()
     options.add_argument('--headless')
     # options.add_argument('--no-sandbox')
     # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    chatGPTresponse = gpt_response["recommendation"]
 
-    response=[]
+    response={"recommendations": []}
 
     # Get the products from flipkart
-    for search_query in chatGPTresponse:
+    for search_query in (gpt_response["recommendation"] if "recommendation" in gpt_response else gpt_response):
         try:
             driver.get(f"https://www.flipkart.com/search?q={search_query}")
             product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
@@ -216,7 +233,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
                     product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
                     product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
                     break
-            response.append(product_description)
+            response["recommendations"].append(product_description)
         except:
             print("Outer except")
             pass
