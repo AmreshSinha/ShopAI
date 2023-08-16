@@ -222,7 +222,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
         try:
             driver.get(f"https://www.flipkart.com/search?q={search_query}")
             product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
-            product_description={}
+            product_description={"search_query" : search_query}
             for product_card in product_cards:
                 try:
                     if (product_card.find_element(By.CLASS_NAME, "_2I5qvP").find_element(By.TAG_NAME, "span").text):
@@ -242,14 +242,43 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     driver.close()
     print(response)
     return response
+    
+
+@app.get("/regenerate-item")
+def regenerate_item(search_query):
+    messages.append({'role' : 'system','content' : f'''your recomendation had {search_query} in it and item based on that searchable tag fetched from online e-commerce store was not liked by user.\n
+    you have to change this recommendation after analyzing the reasons why this tag couldn't have worked and generate new one afterwards. you only speak JSON and have to return the response in format : """"{{"tag" : "new tag recommended by you}}""" strictly without any deviation'''})
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
+    print(chat_completion)
+    gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
+    print(gpt_response)
+    options = Options()
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.get(f"https://www.flipkart.com/search?q={gpt_response['tag']}")
+    product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
+    product_description={"search_query" : search_query}
+    for product_card in product_cards:
+        try:
+            if (product_card.find_element(By.CLASS_NAME, "_2I5qvP").find_element(By.TAG_NAME, "span").text):
+                print("Sponsored")
+        except:
+            product_description["product_link"] = str(product_card.find_element(By.TAG_NAME, "a").get_attribute("href"))
+            product_description["product_name"] = str(product_card.find_element(By.CLASS_NAME, "IRpwTa").text)
+            product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
+            product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
+            break
+    return product_description
 
 
-# @app.get("/deleteChat")
-# def deleteChat():
-#     chatbot.delete_conversation(convo_id=convo_id)
-#     return {"status": "success"}
-
-@app.post("/chat/{prompt}")
-def chat(prompt: str):
-    gpt_response = chatgpt_query(prompt)
-    return gpt_response
+@app.get("/trends")
+def get_trends():
+    options = Options()
+    options.add_argument('--headless')
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.get(f"https://www.bewakoof.com/blog/15-latest-fashion-trends-for-indian-fashionista/")
+    result = driver.find_elements(By.TAG_NAME, "body")
+    print(result)
+    return result
