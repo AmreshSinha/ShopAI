@@ -5,14 +5,53 @@ import { useNavigate } from "react-router-dom";
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const [userState, setUserState] = React.useState("");
+
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        var latitude = position.coords.latitude;
+        var longitude = position.coords.longitude;
+
+        var apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
+
+        fetch(apiUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data && data.address) {
+
+              // var address = data.address;
+              // var formattedAddress = `${address.road || ""}, ${
+              //   address.city || ""
+              // }, ${address.state || ""}, ${address.country || ""}`;
+              setUserState(data.address.state)
+              console.log("User's Address:", data.address.state);
+            } else {
+              console.log("Address not found.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching address:", error);
+          });
+      },
+      function (error) {
+        console.error("Error Code = " + error.code + " - " + error.message);
+      }
+    );
+  } else {
+    console.log("Geolocation is not available in this browser.");
+  }
+
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
+    data["state"] = userState;
     navigate("/test", {
       state: data,
-    })
+    });
   };
+
   return (
     <PageWrapper>
       <Navbar CartDisabled={true} />
