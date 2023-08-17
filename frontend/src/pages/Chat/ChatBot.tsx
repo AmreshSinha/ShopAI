@@ -3,7 +3,12 @@ import styled from "styled-components";
 import axios from "axios";
 import { MdPerson } from "react-icons/md";
 import { GoHubot } from "react-icons/go";
-import { PiPaperPlaneRightFill, PiShuffle, PiLink } from "react-icons/pi";
+import {
+  PiPaperPlaneRightFill,
+  PiShuffle,
+  PiLink,
+  PiMicrophone,
+} from "react-icons/pi";
 import { CircularProgress } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { createSpeechlySpeechRecognition } from "@speechly/speech-recognition-polyfill";
@@ -203,6 +208,14 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
           autoFocus={true}
           required
         />
+        <button
+          onTouchStart={startListening}
+          onMouseDown={startListening}
+          onTouchEnd={SpeechRecognition.stopListening}
+          onMouseUp={SpeechRecognition.stopListening}
+        >
+          <PiMicrophone />
+        </button>
         <button>
           <PiPaperPlaneRightFill />
         </button>
@@ -437,6 +450,7 @@ const ChatBotWrapper = styled.div`
     display: flex;
     align-items: center;
     position: fixed;
+    gap: 0.5rem;
     input {
       all: unset;
       padding: 0.5rem;
