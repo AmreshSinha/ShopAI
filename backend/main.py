@@ -118,6 +118,10 @@ While generating the response break down the problem into multiple smaller chunk
 5. If a user requests outfit like some personality. First think about who may be that personality and what kind of clothes does that personality usually wear and then think of some options.
 6. What are some important events/festivals around the date specified in the request in the location of the user and what outfit style may be followed. What is the usual weather at that time at that location and what kind of clothes can be worn in that weather.
 
+user request may be related to your old recommendations and he may be asking you to suggest something else for some item(s) you recommended earlier.\n
+you have to see your earlier recommended tags for those item(s) and then recommend something else for those item(s) strictly.
+for example: user request is "I didn't like shoes you recommended suggested. show something else" then you have to see your earlier recommended tags for related item and then recommend something else for this item(s) strictly. and you have to follow this strictly and return output in ASSISTANT_OUTPUT_FORMAT format strictly.
+
 Add the answers to the above questions in the "assistant_notes" field of the ASSISTANT_OUTPUT_FORMAT format while generating the output.
 Use the answers to these questions to recommend the outfits to the user. Do not recommend something which violates the answers of the questions given above. Make sure the outfit recommendations are complete and well coordinated including clothing,accessories and footwear.
 
@@ -245,9 +249,9 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     
 
 @app.get("/regenerate-item")
-def regenerate_item(search_query):
-    messages.append({'role' : 'system','content' : f'''your recomendation had {search_query} in it and item based on that searchable tag fetched from online e-commerce store was not liked by user.\n
-    you have to change this recommendation after analyzing the reasons why this tag couldn't have worked and generate new one afterwards. you only speak JSON and have to return the response in format : """"{{"tag" : "new tag recommended by you}}""" strictly without any deviation'''})
+def regenerate_item(search_query, product_name):
+    messages.append({'role' : 'system','content' : f'''your recomendation had {search_query} in it and item based on that searchable tag fetched from online e-commerce store was not liked by user and fetched product name is {product_name}.\n
+    you have to change this recommendation after analyzing the reasons why this tag couldn't have worked and this product name got recommended and generate new one afterwards. you only speak JSON and have to return the response in format : """"{{"tag" : "new tag recommended by you}}""" strictly without any deviation'''})
     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
@@ -268,7 +272,7 @@ def regenerate_item(search_query):
             product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
             product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
             break
-    return product_description
+    return {"recommendations": [product_description]}
 
 
 @app.get("/trends")
