@@ -194,6 +194,7 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
                   });
                 }
               });
+            setInputValue("");
           }
         }}
       >
@@ -216,7 +217,7 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
         >
           <PiMicrophone />
         </button>
-        <button>
+        <button type="submit">
           <PiPaperPlaneRightFill />
         </button>
       </form>
@@ -279,7 +280,6 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
           width: "100%",
           display: "flex",
           justifyContent: "flex-start",
-          flexWrap: "wrap",
         }}
       >
         <div
@@ -287,11 +287,12 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
             display: "flex",
             alignItems: "flex-end",
             gap: "4px",
-            flexWrap: "wrap",
           }}
         >
           <div
             style={{
+              minWidth: "24px",
+              minHeight: "24px",
               width: "24px",
               height: "24px",
               borderRadius: "50%",

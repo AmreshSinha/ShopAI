@@ -92,7 +92,7 @@ export default function Search<SearchProps>({ setQueryAsked }) {
             >
               <PiMicrophone />
             </button>
-            <button>
+            <button type="submit">
               Start <PiPaperPlaneRightFill />
             </button>
           </form>
