@@ -1,12 +1,21 @@
 import React from "react";
 import styled from "styled-components";
-import { PiPaperPlaneRightFill } from "react-icons/pi";
+import { PiPaperPlaneRightFill, PiMicrophone } from "react-icons/pi";
+import { createSpeechlySpeechRecognition } from "@speechly/speech-recognition-polyfill";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
+
+const appId = "d2a075a3-0121-4ff5-86a0-6dfdb5f28ed8";
+const SpeechlySpeechRecognition = createSpeechlySpeechRecognition(appId);
+SpeechRecognition.applyPolyfill(SpeechlySpeechRecognition);
 
 type SearchProps = {
   setQueryAsked: React.Dispatch<React.SetStateAction<string>>;
 };
 
 export default function Search<SearchProps>({ setQueryAsked }) {
+  const [inputValue, setInputValue] = React.useState("");
   const categories = {
     Sports: "Suggest me an outfit for a sports event",
     Wedding: "Suggest me an outfit for a wedding",
@@ -26,6 +35,21 @@ export default function Search<SearchProps>({ setQueryAsked }) {
     "Suggest me an outfit for a Bollywood theme party",
     "Recommend me an outfit for Durga Puja in Guwahati",
   ];
+
+  // Speech Recognition
+  const { transcript, browserSupportsSpeechRecognition } =
+    useSpeechRecognition();
+  const startListening = async () => {
+    SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
+    setInputValue(transcript);
+  };
+
+  if (!browserSupportsSpeechRecognition) {
+    return <span>Browser doesn't support speech recognition.</span>;
+  }
+
+  console.log(inputValue);
+
   return (
     <SearchWrapper>
       <Container>
@@ -55,8 +79,19 @@ export default function Search<SearchProps>({ setQueryAsked }) {
               name="query"
               id="query"
               placeholder="What Outfit are you looking for today?"
+              onChange={(e) => setInputValue(e.target.value)}
+              value={inputValue}
+              autoFocus={true}
               required
             />
+            <button
+              onTouchStart={startListening}
+              onMouseDown={startListening}
+              onTouchEnd={SpeechRecognition.stopListening}
+              onMouseUp={SpeechRecognition.stopListening}
+            >
+              <PiMicrophone />
+            </button>
             <button>
               Start <PiPaperPlaneRightFill />
             </button>
@@ -122,6 +157,7 @@ const Container = styled.div`
     padding: 10px 16px;
     display: flex;
     align-items: center;
+    gap: 0.25rem;
     input {
       all: unset;
       padding: 0.5rem;

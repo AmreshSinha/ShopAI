@@ -3,9 +3,17 @@ import styled from "styled-components";
 import axios from "axios";
 import { MdPerson } from "react-icons/md";
 import { GoHubot } from "react-icons/go";
-import { PiPaperPlaneRightFill, PiShuffle } from "react-icons/pi";
+import { PiPaperPlaneRightFill, PiShuffle, PiLink } from "react-icons/pi";
 import { CircularProgress } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import { createSpeechlySpeechRecognition } from "@speechly/speech-recognition-polyfill";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
+
+const appId = "d2a075a3-0121-4ff5-86a0-6dfdb5f28ed8";
+const SpeechlySpeechRecognition = createSpeechlySpeechRecognition(appId);
+SpeechRecognition.applyPolyfill(SpeechlySpeechRecognition);
 
 type ChatBotProps = {
   queryAsked: string;
@@ -17,6 +25,8 @@ type ChatBotProps = {
 };
 
 export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
+  const [inputValue, setInputValue] = React.useState("");
+
   const chatInputRef = React.useRef<HTMLInputElement>(null);
 
   // Local query asked in ChatBot Page
@@ -108,6 +118,18 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
 
   console.log(response);
 
+  // Speech Recognition
+  const { transcript, browserSupportsSpeechRecognition } =
+    useSpeechRecognition();
+  const startListening = async () => {
+    SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
+    setInputValue(transcript);
+  };
+
+  if (!browserSupportsSpeechRecognition) {
+    return <span>Browser doesn't support speech recognition.</span>;
+  }
+
   if (isFirstCall)
     return (
       <div
@@ -176,6 +198,9 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
           name="query"
           id="query"
           placeholder="What Outfit are you looking for today?"
+          onChange={(e) => setInputValue(e.target.value)}
+          value={inputValue}
+          autoFocus={true}
           required
         />
         <button>
@@ -273,13 +298,18 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
     );
   } else if (message && message.recommendations) {
     return (
-      <div style={{ width: "100%", display: "flex" }}>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexWrap: "wrap",
+        }}
+      >
         <div
           style={{
             display: "flex",
             alignItems: "flex-end",
             gap: "4px",
-            flexWrap: "wrap",
           }}
         >
           <div
@@ -297,21 +327,54 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
           </div>
           <div className="recommendations-wrapper">
             {message.recommendations.map((rec) => (
-              <div
-                style={{
-                  background: `url(${rec.image_link}) no-repeat center center`,
-                  backgroundSize: "cover",
-                  width: "100px",
-                  height: "100px",
-                  borderRadius: "6px",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "row-reverse" }}>
+              <div>
+                <div
+                  style={{
+                    background: `url(${rec.image_link}) no-repeat center center`,
+                    backgroundSize: "cover",
+                    width: "120px",
+                    height: "120px",
+                    borderRadius: "6px 6px 0 0",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "row-reverse" }}
+                  >
+                    <button
+                      style={{
+                        backgroundColor: "#C86C53",
+                        padding: "4px",
+                        borderRadius: "6px",
+                      }}
+                      onClick={() => window.open(rec.product_link, "_blank")}
+                    >
+                      <PiLink color="white" />
+                    </button>
+                  </div>
+                  {/* <p>{rec.product_link}</p> */}
+                </div>
+                <div style={{ display: "flex" }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#5F5CD5",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderRadius: "0 0 0 6px",
+                      color: "#fff",
+                      padding: "4px",
+                    }}
+                  >
+                    <p>{rec.product_price}</p>
+                  </div>
                   <button
                     style={{
                       backgroundColor: "#C86C53",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
                       padding: "4px",
-                      borderRadius: "6px",
                     }}
                     onClick={(e) => {
                       e.preventDefault();
@@ -319,6 +382,7 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
                         .get(`http://localhost:8000/regenerate-item`, {
                           params: {
                             search_query: rec.search_query,
+                            product_name: rec.product_name,
                           },
                         })
                         .then((res) => {
@@ -335,12 +399,17 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
                   >
                     <PiShuffle color="white" />
                   </button>
-                </div>
-                {/* <p>{rec.product_link}</p> */}
-                <div>
-                  <p>{rec.product_price}</p>
-                  <button>
-                    <ShoppingCartIcon sx={{ paddingRight: "0.25rem" }} />
+                  <button
+                    style={{
+                      background: "#fff",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      padding: "4px",
+                      borderRadius: "0 0 6px 0",
+                    }}
+                  >
+                    <ShoppingCartIcon />
                   </button>
                 </div>
               </div>
@@ -405,7 +474,10 @@ const ChatList = styled.div`
     padding: 1rem;
     background-color: #d9d9d9;
     border-radius: 8px;
-    display: flex;
-    flex-wrap: "wrap";
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    flex-wrap: wrap;
+    width: ;
+    gap: 1rem;
   }
 `;
