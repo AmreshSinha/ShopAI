@@ -1,15 +1,21 @@
-import "./responseWrapper.css";
+import React from "react";
+import styled from "styled-components";
+import "./homeScreen.css";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
-import axios from "axios";
-import { QuestionTile } from "./questionTile";
-import { RecommendationTile } from "./recommendationTile";
-import { useState } from "react";
+import { QuestionTile } from "../components/Home/questionTile";
+import { RecommendationTile } from "../components/Home/recommendationTile";
 import { CircularProgress } from "@mui/material";
+import { Navbar } from "../components/common/navbar";
 
-export function ResponseWrapper() {
-  let [respones, setResponses] = useState([]);
-  let [askedQuery, setAskedQuery] = useState("");
+export function HomeScreen() {
+  const location = useLocation();
+  const userPref = location.state;
+  const [askedQuery, setAskedQuery] = useState(null);
+  let [response, setResponses] = useState([]);
   let [fetchingResponse, setFetchingResponse] = useState(false);
 
   async function handleSubmit(event) {
@@ -28,22 +34,23 @@ export function ResponseWrapper() {
       },
     });
     console.log(res.data);
+    // eslint-disable-next-line
     setResponses((prevResponses) => {
       //console.log([...prevRecommendations, null]);
       setFetchingResponse(false);
       return [...prevResponses, { askedQuery: askedQuery, response: res.data }];
     });
   }
-
   return (
     <div>
+      <Navbar />
       <div className="title-text">
         {!askedQuery
-          ? "ShopAI will help you plan an outfit"
+          ? "Welcome back"
           : "Hope you liked our recommended outfit!"}
       </div>
       <div>
-        {respones.map((queryResult, idx) => {
+        {response.map((queryResult, idx) => {
           console.log(queryResult);
           if ("recommendations" in queryResult.response) {
             return (

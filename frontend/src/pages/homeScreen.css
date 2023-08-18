@@ -1,5 +1,5 @@
 .app-wrapper {
-    min-height: 110vh;
+    min-height: 100vh;
     background-image: var(--dark, linear-gradient(90deg, #2A2C46 0%, #6A445D 100%));
     display: flex;
     justify-content: center;
@@ -20,5 +20,4 @@
     -moz-background-clip: text;
     -webkit-text-fill-color: transparent; 
     -moz-text-fill-color: transparent;
-    margin: 20px;
 }
