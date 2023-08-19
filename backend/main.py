@@ -33,7 +33,13 @@ import datetime
 # })
 # convo_id = ""
 
+openai.api_key = os.getenv("OPEN_AI_API_KEY")
 
+
+twilio_sid=os.getenv("TWILIO_SID")
+twilio_auth_token=os.getenv("TWILIO_AUTH_TOKEN")
+twilio_client=Client(twilio_sid,twilio_auth_token)
+user_phone=""
 # user_details={
 #         'age' : '',
 #         'location' : '',
@@ -68,12 +74,6 @@ load_dotenv()
 userData = {}
 
 messages=[]
-openai.api_key =os.environ['OPEN_AI_API_KEY']
-
-twilio_sid=os.environ['TWILIO_SID']
-twilio_auth_token=os.environ['TWILIO_AUTH_TOKEN']
-twilio_client=Client(twilio_sid,twilio_auth_token)
-user_phone=""
 
 @app.on_event('startup')
 def init_data():
