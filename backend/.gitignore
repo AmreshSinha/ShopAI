@@ -161,3 +161,6 @@ cython_debug/
 
 # GCP Config
 gcpconfig.json
+posts/**
+!posts/**/
+!posts/**/.gitkeep
