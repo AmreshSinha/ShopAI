@@ -6,7 +6,7 @@
 # TODO: Switch over to official OpenAI API
 
 from typing import Union
-
+import instaloader
 from fastapi import FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ from revChatGPT.V1 import Chatbot
 import os
 import openai
 from dotenv import load_dotenv
-
+import glob
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -33,13 +33,7 @@ import datetime
 # })
 # convo_id = ""
 
-openai.api_key = "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"
 
-
-twilio_sid=""
-twilio_auth_token=""
-twilio_client=Client(twilio_sid,twilio_auth_token)
-user_phone=""
 # user_details={
 #         'age' : '',
 #         'location' : '',
@@ -74,6 +68,12 @@ load_dotenv()
 userData = {}
 
 messages=[]
+openai.api_key =os.environ['OPEN_AI_API_KEY']
+
+twilio_sid=os.environ['TWILIO_SID']
+twilio_auth_token=os.environ['TWILIO_AUTH_TOKEN']
+twilio_client=Client(twilio_sid,twilio_auth_token)
+user_phone=""
 
 @app.on_event('startup')
 def init_data():
@@ -177,6 +177,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+def get_influencer_posts():
+    L = instaloader.Instaloader(save_metadata=False)
+
+    # List of usernames
+    usernames = ['vogueindia','fashionfloorindia','thesouledstore','__ranbir_kapoor_official__','stylebyami','gqindia']  # Add the usernames you want to download posts from
+    # Loop through the usernames
+    for username in usernames:
+        try:
+            # Load a profile
+            profile = instaloader.Profile.from_username(L.context, username)
+            print("Got profile")
+            count =0 
+            # Get the first two posts from the profile
+            for post in profile.get_posts():
+                # Download the post
+                if not post.is_video:
+                    L.download_post(post, target="posts")
+                    count+=1
+                    if count==2:
+                        break
+        except Exception as e:
+            print(f"An error occurred with user {username}: {e}")
+    txt_files = glob.glob(os.path.join("images", '*.txt'))
+    for txt_file in txt_files:
+        os.remove(txt_file)
 
 @app.get("/")
 def read_root():
