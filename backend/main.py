@@ -23,8 +23,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 import openai
+import requests
 import json
 from twilio.rest import Client
+import datetime
 
 # chatbot = Chatbot(config={
 #   "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJzd2NpaXRnaHlAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsidXNlcl9pZCI6InVzZXItdDkydFZ2UVducDgyQUlHZ2Z4bEM2MmpUIn0sImlzcyI6Imh0dHBzOi8vYXV0aDAub3BlbmFpLmNvbS8iLCJzdWIiOiJnb29nbGUtb2F1dGgyfDExMzQxNDkyNDM2MjMxNzQ4OTAxMCIsImF1ZCI6WyJodHRwczovL2FwaS5vcGVuYWkuY29tL3YxIiwiaHR0cHM6Ly9vcGVuYWkub3BlbmFpLmF1dGgwYXBwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE2OTA4NzA1MDAsImV4cCI6MTY5MjA4MDEwMCwiYXpwIjoiVGRKSWNiZTE2V29USHROOTVueXl3aDVFNHlPbzZJdEciLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIG1vZGVsLnJlYWQgbW9kZWwucmVxdWVzdCBvcmdhbml6YXRpb24ucmVhZCBvcmdhbml6YXRpb24ud3JpdGUgb2ZmbGluZV9hY2Nlc3MifQ.pJL7L1WMfymxNvfFjMUmej-4y5syM8CIVEy9e6JU_mCXkTttJBjHysWyARePFDzp8nNxKYjYRpyYa08v6JhPLoaSOmWSBCP5LI2_MW7lp23ET2CyAmPZLvg5HiwVH-JaXYHsSvlPxRPsJ68aJBE59pr4bXFV3gYa_o-A7pbtBw0RZcOWgYrJU2E4dgCWQyJ-vgbBLgv7gIbo9HmNqfvid-rXJjGvoYeJlmgCcv8dQ7ROA3RyC2PdvBlwY--37AldIw6AUMAi_Hr7LdvOTsw-vO8zebo4C263kZqDpzbar5BkMH6d5caojOlaGg85TXCs1JkYUiCYvetH1-C1D4YmgA"
@@ -34,9 +36,37 @@ from twilio.rest import Client
 openai.api_key = "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"
 
 
-twilio_sid="ngrok http --domain=beetle-loved-probably.ngrok-free.app 80"
-twilio_auth_token="5915af72dcc6503cbc050ebbe259c49b"
+twilio_sid=""
+twilio_auth_token=""
 twilio_client=Client(twilio_sid,twilio_auth_token)
+user_phone=""
+# user_details={
+#         'age' : '',
+#         'location' : '',
+#         'gender' : '',
+#         'user_instructions' : '',
+#         'userQuery' : '',
+#         'date': str(datetime.datetime.now()),
+#         'budget': ''
+# }
+
+empty_field_response={
+    'age' : "What's your age ?",
+    'location' : "what's your location (city/town/country) ?",
+    'gender' : "What's your gender ?",
+    'user_instructions' : 'Any specific instructions you have for the recommendations ?',
+    'budget' : "What's your overall budget ?"
+}
+
+user_details={
+                "gender" : "Male",
+                "userQuery" : "Suggest an outfit for a diwali party",
+                "user_instructions" : "Don't Suggest slim fit clothes",
+                "location" : "Mumbai",
+                "date": "10/08/2023",
+                "age": "23",
+                "budget"  : "5000"
+                    }
 
 app = FastAPI()
 
@@ -148,14 +178,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/whatsapp-bot")
-def messaging(Body: str = Form()):
-    message = Body.lower()
-    if message=="clear":
-        print("clear")
-    print(message)
-    return {}
-
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -252,7 +274,8 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
                     product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
                     break
             response["recommendations"].append(product_description)
-        except:
+        except Exception as e:
+            print(e)
             print("Outer except")
             pass
 
@@ -383,6 +406,175 @@ def clear():
         Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending outfit.
         The output should always be given as a RFC8259 compliant JSON response in the ASSISTANT_OUTPUT_FORMAT format specified at the start of the message.
         Do not return anything response which are not in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user’s request will follow this message
+        you can use emojis in the responses
         """}
    ]
     return { "status": "success" }
+
+
+def send_message(body_text):
+    global twilio_client
+    global user_phone
+    print(user_phone,twilio_client)
+    twilio_client.messages.create(
+        from_=f"whatsapp:+14155238886", body=body_text, to=f"whatsapp:+91{user_phone}"
+    )
+
+def find_empty_user_details_field():
+    for key, value in user_details.items():
+        if value=='' and key!='userQuery':
+            return key
+    return ''
+
+def check_user_details_empty():
+    res=True
+    for key, value in user_details.items():
+        if value!='':
+            res=False
+    return res
+
+
+def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:str,curr_date:str,userQuery:str):
+
+    user_requests = {
+		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
+		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
+		  "gender" : gender,
+		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
+		  "user_request" : userQuery,
+		  "user_instructions" : user_instructions,
+		  "location" : location,
+		  "date": curr_date,
+		  "budget"  : "10000"
+        }
+    
+    user_message = {
+        "role": "user",
+        "content": json.dumps(user_requests)
+    }
+
+    messages.append(user_message)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
+    print(chat_completion)
+    gpt_response=""
+    try:
+        gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
+    except:
+        gpt_response=chat_completion['choices'][0]['message']['content']
+    print(gpt_response)
+    print(type(gpt_response))
+    if "question" in gpt_response:
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
+        print(gpt_response["question"])
+        return gpt_response["question"]
+    elif "recommendation" in gpt_response:
+        print(gpt_response["recommendation"])
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["recommendation"])})
+    elif type(gpt_response)==list:
+        print(gpt_response)
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response)})
+    elif type(gpt_response)==str:
+        print(gpt_response)
+        messages.append({'role' : 'assistant','content' : json.dumps(gpt_response)})
+        return gpt_response
+    # Call ChatGPT for flipkart search
+    # print(chat_completion)
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    response={"recommendations": []}
+
+    # Get the products from flipkart
+    for search_query in (gpt_response["recommendation"] if "recommendation" in gpt_response else gpt_response):
+        print("hjfsjhkd")
+        try:
+            driver.get(f"https://www.flipkart.com/search?q={search_query}")
+            product_cards = driver.find_elements(By.CLASS_NAME, "_373qXS")
+            print(product_cards)
+            product_description={"search_query" : search_query}
+            for product_card in product_cards:
+                try:
+                    if (product_card.find_element(By.CLASS_NAME, "_2I5qvP").find_element(By.TAG_NAME, "span").text):
+                        print("Sponsored")
+                except:
+                    product_description["product_link"] = str(product_card.find_element(By.TAG_NAME, "a").get_attribute("href"))
+                    product_description["product_name"] = str(product_card.find_element(By.CLASS_NAME, "IRpwTa").text)
+                    product_description["product_price"] = product_card.find_element(By.CLASS_NAME, "_30jeq3").text
+                    product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
+                    # print(product_description)
+                    url = 'https://t.ly/api/v1/link/shorten'
+                    print(product_description["product_link"])
+                    payload = {
+                        "long_url": product_description["product_link"],
+                        "domain": "https://t.ly/",
+                        "expire_at_datetime": "2035-01-17 15:00:00",
+                        "description": "Flipkart Link",
+                        "public_stats": True
+                    }
+                    headers = {
+                    'Authorization': 'Bearer AQZhY6BHbKsneCcZBR8lvXRgELGgZ6WesoAstsFzzzmJPSxfIEiM8iWjEOIR',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                    }
+
+                    res = requests.request('POST', url, headers=headers, json=payload)
+                    # print(response)
+                    # print(response.json())
+                    # print(response.json()["short_url"])
+                    data=res.json()
+                    print(data)
+                    print(type(data))
+                    product_description["product_link"]=data["short_url"]
+                    break
+            response["recommendations"].append(product_description)
+        except Exception as e:
+            print(e)
+            print("Outer except")
+            pass
+
+    # get_product_details(product_description["product_link"],driver)
+    driver.close()
+    print(response)
+    formatted_response="Based on the interaction, I would recommend you following: \n"
+    print(formatted_response)
+    for item in response["recommendations"]:
+        print(item)
+        item_descp= f"""{item['product_name']} \n Link: {item["product_link"]} \n\n"""
+        formatted_response=formatted_response+item_descp
+
+    return formatted_response
+
+
+@app.post("/whatsapp-bot")
+def messaging(Body: str = Form()):
+    try:
+        message = Body.lower()
+        print(message)
+        message_split=message.split(" ")
+        print(message_split)
+        empty_field=find_empty_user_details_field()
+        global user_details
+        if len(message_split)==2 and message_split[0]=="phone" and message_split[1].isnumeric():
+            global user_phone
+            user_phone=message_split[1]
+            return send_message(f"""Welcome to ShopAI. I am a AI Assisstant and I will help you to find best outfit from flipkart ph no. +91{user_phone}. Let's start with normal questionarrie: \n\n What's your age ?""")
+        elif message=="clear":
+            clear()
+            return send_message("New Session Started: I am ready to answer your questions. plz tell your phonenumber as: Phone 98XXXXXXX")
+        elif empty_field!='':
+            user_details[empty_field]=message
+            new_empty_field = find_empty_user_details_field()
+            if new_empty_field!='':
+                return send_message(empty_field_response[new_empty_field])
+            else:
+                return send_message("I am ready to take your queries. Plz tell what kind of outfit you want ?")
+        user_details["userQuery"]=message
+        scraped_response = scrape_flipkart_whatsapp(age=user_details["age"],location=user_details["location"],gender=user_details["gender"],curr_date=user_details["date"],user_instructions=user_details["user_instructions"],userQuery=user_details["userQuery"])
+        print(scraped_response)
+        return send_message(scraped_response)
+    except Exception as e:
+        print(e)
+        return send_message("Give all inputs correctly")
