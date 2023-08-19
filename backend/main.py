@@ -77,12 +77,24 @@ userData = {}
 
 messages=[]
 
+fashion_trends=[]
+
 @app.on_event('startup')
 def init_data():
     print("init call")
     global userData
     userData["purchase_history"] = ["Men Solid Round Neck Polyester White T-Shirt", "Flip Flops  (Black 9)", "Flip Flops  (Navy, Grey 9)", "Solid Men Track Suit", "LUX INFERNO Men Top Thermal", "Woven Beanie", "Men Solid Black Track Pants", "Jockey Men's Cotton Shorts (SP26-0103-BLACK Black L)", "Hygear Men's Xpress Olive green Slippers_10 UK (HG-GE-1004)", "Jockey Men's Tailored Fit Cotton Thermal Long John (2420-Black-S_Black_S)", "Li-Ning Ultra IV Non-Marking Cushion Badminton Shoe (White, Navy, 9 UK, Unisex)", "Bewakoof Men's Cotton Solid Solid Black and White Half Sleeves | Round Neck | Regular Fit T-Shirt/Tee, Black, White", "GRITSTONES Anthramelange Full Sleeves High Neck T-Shirt (Large) Dark Grey", "DAMENSCH Men's Boy Shorts (DAM-WWB-SHT-TLB-M_D.Lit Brown_M)", "513 Men Acrylic Woolen Casual Winter Wear Striped Knitted Warm Premium Mufflers Black", "513 Girl's Self-Design Mufflers (jd423mufwmrn_Multicolored_Free Size)", "Eden & Ivy Women's Cotton Knee Length Regular Nightgown", "Eden & Ivy Women's Cotton Knee Length Relaxed Nightgown"]
     userData["browsing_history"] = ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Puma Unisex-Adult Jog V3 Flip-Flop", "Woodland Men's Off Slipper", "Woodland mens Flip Flop", "Campus Men's Flip Flops", "Adidas mens Adirio Attack Slipper", "Hygear mens Xpress Slipper", "Jockey 9426 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Jockey 9411 Men's Super Combed Cotton Rich Straight Fit Solid Shorts with Side Pockets", "Hygear mens Zodiac Slipper", "Hygear mens Xpress Slipper", "Red Tape Women's Walking Shoes", "Puma Womens Reflex WNS Running Shoe", "US Polo Association mens Facundo Flip-flop", "crazymonk One Piece Monkey D Luffy Round Neck Anime T-Shirt"]
+    global fashion_trends
+    fashion_trends = open("./captions.txt", "r").readlines()
+    for idx, caption in enumerate(fashion_trends):
+        print(caption)
+        print(type(caption))
+        print(caption[-2:])
+        if caption[-2:]=="\n":
+            fashion_trends[idx]=caption[:-2]
+            print(caption[:-2])
+    print("fetched fashion trends")
     global messages
     messages=[
        {
@@ -119,7 +131,7 @@ To specify the user's details you will be given a RFC8259 compliant json object 
 		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
 		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
 		  "gender" : "Male",
-		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
+		  "trends" : {fashion_trends},
 		  "user_request" : "Suggest an outfit for a diwali party"
 		  "user_instructions" : "Don't Suggest slim fit clothes",
 		  "location" : "Mumbai",
@@ -146,7 +158,7 @@ The explanations for the value of the keys in the User request JSON Object given
           
 If you wish to ask any question to the user. ask it as a RFC8259 compliant json object in  ASSISTANT_QUESTION_FORMAT format specified before.
 
-The user’s request must contain the occasion for which he needs an outfit. If it does not contain the occasion assume that the outfit recommendation is for casual wear.
+The user's request must contain the occasion for which he needs an outfit. If it does not contain the occasion assume that the outfit recommendation is for casual wear.
 
 While generating the response break down the problem into multiple smaller chunks. Before recommending anything, answer the below questions:
 1. What is the type of the occasion for which the user is searching a outfit. occasion may be formal, informal, traditional or casual or something else. What is the significance of the occasion and what kind of clothes do people usually wear on such occasions.
@@ -349,6 +361,8 @@ def regenerate_item(search_query, product_name):
 @app.get("/clear")
 def clear():
     global messages
+    global fashion_trends
+    print(fashion_trends)
     messages.clear()
     messages = [
             {
@@ -385,7 +399,7 @@ def clear():
                 "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
                 "browsing_history" : ["Oversized Tshirts","Red Trousers"],
                 "gender" : "Male",
-                "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
+                "trends" : {fashion_trends},
                 "user_request" : "Suggest an outfit for a diwali party"
                 "user_instructions" : "Don't Suggest slim fit clothes",
                 "location" : "Mumbai",
@@ -611,12 +625,11 @@ def messaging(Body: str = Form()):
     
 @app.get("/trends")
 def get_trends():
-    vertex_captions=['a model walks down the runway wearing a pink and white saree','a man wearing a denim jacket is walking down the street','a woman in a blue dress is standing in front of a couch',
-    'a man is wearing a black coat and grey pants','a man wearing a black shirt and green cargo pants','a man wearing glasses and a colorful jacket is laughing']
+    global fashion_trends
     trend_messages=[{
         'role' : 'system',
         'content' : f'''you work for a fashion company and your task is to read from an array of strings in which each string is desciption of an image of a fashion influencer\n
-        and your task is to understand about what new types of clothes they are wearing and what fashion trends is being followed.you are given this array = < {vertex_captions} >. \n
+        and your task is to understand about what new types of clothes they are wearing and what fashion trends is being followed.you are given this array = < {fashion_trends} >. \n
         take time to think & analyze while iterating through this array to understand what people are wearing and what is or can be name of those fashion clothes and what trends are these. you only speak JSON and output should strictly be like \n
         {{"fashion_trends" : ["array items should be name of fashion clothes currently trending after your analysis of this array.]}} \n
         and there should not be any extra text in your response'''
