@@ -33,6 +33,8 @@ import datetime
 # })
 # convo_id = ""
 
+load_dotenv()
+
 openai.api_key = os.getenv("OPEN_AI_API_KEY")
 
 
@@ -40,15 +42,16 @@ twilio_sid=os.getenv("TWILIO_SID")
 twilio_auth_token=os.getenv("TWILIO_AUTH_TOKEN")
 twilio_client=Client(twilio_sid,twilio_auth_token)
 user_phone=""
-# user_details={
-#         'age' : '',
-#         'location' : '',
-#         'gender' : '',
-#         'user_instructions' : '',
-#         'userQuery' : '',
-#         'date': str(datetime.datetime.now()),
-#         'budget': ''
-# }
+
+user_details={
+        'age' : '',
+        'location' : '',
+        'gender' : '',
+        'user_instructions' : '',
+        'userQuery' : '',
+        'date': str(datetime.datetime.now()),
+        'budget': ''
+}
 
 empty_field_response={
     'age' : "What's your age ?",
@@ -58,19 +61,18 @@ empty_field_response={
     'budget' : "What's your overall budget ?"
 }
 
-user_details={
-                "gender" : "Male",
-                "userQuery" : "Suggest an outfit for a diwali party",
-                "user_instructions" : "Don't Suggest slim fit clothes",
-                "location" : "Mumbai",
-                "date": "10/08/2023",
-                "age": "23",
-                "budget"  : "5000"
-                    }
+# user_details={
+#                 "gender" : "Male",
+#                 "userQuery" : "Suggest an outfit for a diwali party",
+#                 "user_instructions" : "Don't Suggest slim fit clothes",
+#                 "location" : "Mumbai",
+#                 "date": "10/08/2023",
+#                 "age": "23",
+#                 "budget"  : "5000"
+#                     }
 
 app = FastAPI()
 
-load_dotenv()
 userData = {}
 
 messages=[]
@@ -161,9 +163,17 @@ for example: user request is "I didn't like shoes you recommended suggested. sho
 Add the answers to the above questions in the "assistant_notes" field of the ASSISTANT_OUTPUT_FORMAT format while generating the output.
 Use the answers to these questions to recommend the outfits to the user. Do not recommend something which violates the answers of the questions given above. Make sure the outfit recommendations are complete and well coordinated including clothing,accessories and footwear.
 
+
+Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Strictly append user's gender and age in every \n
+        recommendation you give for example if your ASSISTANT_OUTPUT_FORMAT output is '''{
+            "recommendation" : ["tshirt", "jeans"]
+        }''' and user's gender is "Male" and age "23" then, modify your ASSISTANT_OUTPUT_FORMAT output by appending user's "gender" to every item in recommendation array. for ex:
+        ''''{
+            "recommendation" : ["tshirt for Men/Male age 23","jeans for Women/Female age 23"]
+        }'''   
 Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending outfit.
 The output should always be given as a RFC8259 compliant JSON response in the ASSISTANT_OUTPUT_FORMAT format specified at the start of the message.
-Do not return anything response which are not in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user’s request will follow this message
+Do not return anything response which are not in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user's request will follow this message
 """}
    ]
 
@@ -275,7 +285,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     # Call ChatGPT for flipkart search
     # print(chat_completion)
     options = Options()
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     # options.add_argument('--no-sandbox')
     # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -335,19 +345,6 @@ def regenerate_item(search_query, product_name):
             product_description["image_link"] = str(product_card.find_element(By.TAG_NAME, "img").get_attribute("src"))
             break
     return {"recommendations": [product_description]}
-
-
-@app.get("/trends")
-def get_trends():
-    options = Options()
-    options.add_argument('--headless')
-    # options.add_argument('--no-sandbox')
-    # options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(f"https://www.bewakoof.com/blog/15-latest-fashion-trends-for-indian-fashionista/")
-    result = driver.find_elements(By.TAG_NAME, "body")
-    print(result)
-    return result
 
 @app.get("/clear")
 def clear():
@@ -415,7 +412,7 @@ def clear():
                 
         If you wish to ask any question to the user. ask it as a RFC8259 compliant json object in  ASSISTANT_QUESTION_FORMAT format specified before.
 
-        The user’s request must contain the occasion for which he needs an outfit. If it does not contain the occasion assume that the outfit recommendation is for casual wear.
+        The user's request must contain the occasion for which he needs an outfit. If it does not contain the occasion assume that the outfit recommendation is for casual wear.
 
         While generating the response break down the problem into multiple smaller chunks. Before recommending anything, answer the below questions:
         1. What is the type of the occasion for which the user is searching a outfit. occasion may be formal, informal, traditional or casual or something else. What is the significance of the occasion and what kind of clothes do people usually wear on such occasions.
@@ -424,13 +421,20 @@ def clear():
         4. What would be an approximate price of each component of the outfit recommended? and how much should be the approximate price for each component to fit in user total budget
         5. If a user requests outfit like some personality. First think about who may be that personality and what kind of clothes does that personality usually wear and then think of some options.
         6. What are some important events/festivals around the date specified in the request in the location of the user and what outfit style may be followed. What is the usual weather at that time at that location and what kind of clothes can be worn in that weather.
-
+    
         Add the answers to the above questions in the "assistant_notes" field of the ASSISTANT_OUTPUT_FORMAT format while generating the output.
         Use the answers to these questions to recommend the outfits to the user. Do not recommend something which violates the answers of the questions given above. Make sure the outfit recommendations are complete and well coordinated including clothing,accessories and footwear.
 
-        Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending outfit.
-        The output should always be given as a RFC8259 compliant JSON response in the ASSISTANT_OUTPUT_FORMAT format specified at the start of the message.
-        Do not return anything response which are not in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user’s request will follow this message
+        Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Strictly append user's gender and age in every \n
+        recommendation you give for example if your ASSISTANT_OUTPUT_FORMAT output is '''{
+            "recommendation" : ["tshirt", "jeans"]
+        }''' and user's gender is "Male" and age "23" then, modify your ASSISTANT_OUTPUT_FORMAT output by appending user's "gender" to every item in recommendation array. for ex:
+        ''''{
+            "recommendation" : ["tshirt for Men/Male age 23","jeans for Women/Female age 23"]
+        }'''       
+        . Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending outfit. The output should always be given as a \n
+        RFC8259 compliant JSON response in the ASSISTANT_OUTPUT_FORMAT format specified at the start of the message. Do not return anything response which are not \n
+        in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user's request will follow this message
         you can use emojis in the responses
         """}
    ]
@@ -488,6 +492,7 @@ def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:s
         gpt_response=chat_completion['choices'][0]['message']['content']
     print(gpt_response)
     print(type(gpt_response))
+    print(type(gpt_response)==str)
     if "question" in gpt_response:
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
         print(gpt_response["question"])
@@ -603,3 +608,20 @@ def messaging(Body: str = Form()):
     except Exception as e:
         print(e)
         return send_message("Give all inputs correctly")
+    
+@app.get("/trends")
+def get_trends():
+    vertex_captions=['a model walks down the runway wearing a pink and white saree','a man wearing a denim jacket is walking down the street','a woman in a blue dress is standing in front of a couch',
+    'a man is wearing a black coat and grey pants','a man wearing a black shirt and green cargo pants','a man wearing glasses and a colorful jacket is laughing']
+    trend_messages=[{
+        'role' : 'system',
+        'content' : f'''you work for a fashion company and your task is to read from an array of strings in which each string is desciption of an image of a fashion influencer\n
+        and your task is to understand about what new types of clothes they are wearing and what fashion trends is being followed.you are given this array = < {vertex_captions} >. \n
+        take time to think & analyze while iterating through this array to understand what people are wearing and what is or can be name of those fashion clothes and what trends are these. you only speak JSON and output should strictly be like \n
+        {{"fashion_trends" : ["array items should be name of fashion clothes currently trending after your analysis of this array.]}} \n
+        and there should not be any extra text in your response'''
+    }]
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=trend_messages)
+    print(chat_completion)
+    gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
+    return gpt_response
