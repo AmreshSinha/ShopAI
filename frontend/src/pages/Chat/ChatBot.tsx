@@ -9,7 +9,8 @@ import {
   PiLink,
   PiMicrophone,
 } from "react-icons/pi";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Tooltip, IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { createSpeechlySpeechRecognition } from "@speechly/speech-recognition-polyfill";
 import SpeechRecognition, {
@@ -27,9 +28,18 @@ type ChatBotProps = {
     gender: string;
     extra: string;
   };
+  cartItems: any[];
+  setCartItems: React.Dispatch<React.SetStateAction<any[]>>;
+  setQueryAsked: React.Dispatch<React.SetStateAction<string>>;
 };
 
-export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
+export default function ChatBot<ChatBotProps>({
+  queryAsked,
+  userPref,
+  cartItems = [],
+  setCartItems,
+  setQueryAsked,
+}) {
   const [inputValue, setInputValue] = React.useState("");
 
   const chatInputRef = React.useRef<HTMLInputElement>(null);
@@ -156,7 +166,11 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
           res.role === "user" ? (
             <UserMessage message={res.response} />
           ) : (
-            <BotMessage message={res.response} setResponse={setResponse} />
+            <BotMessage
+              message={res.response}
+              setResponse={setResponse}
+              setCartItems={setCartItems}
+            />
           )
         )}
       </ChatList>
@@ -198,14 +212,24 @@ export default function ChatBot<ChatBotProps>({ queryAsked, userPref }) {
           }
         }}
       >
+        <Tooltip title="Clear History">
+          <IconButton
+            onClick={() => {
+              axios.get("http://localhost:8000/clear");
+              setQueryAsked(null);
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
         <input
           ref={chatInputRef}
           type="text"
           name="query"
           id="query"
           placeholder="What Outfit are you looking for today?"
-          onChange={(e) => setInputValue(e.target.value)}
-          value={inputValue}
+          // onChange={(e) => setInputValue(e.target.value)}
+          // value={inputValue}
           autoFocus={true}
           required
         />
@@ -270,9 +294,20 @@ type BotMessageProps = {
       }[]
     >
   >;
+  setCartItems: React.Dispatch<
+    React.SetStateAction<
+      {
+        search_query: string;
+        product_link: string;
+        product_name: string;
+        product_price: string;
+        image_link: string;
+      }[]
+    >
+  >;
 } & UserMessageProps;
 
-function BotMessage<BotMessageProps>({ message, setResponse }) {
+function BotMessage<BotMessageProps>({ message, setResponse, setCartItems }) {
   if (message && message.question) {
     return (
       <div
@@ -422,6 +457,11 @@ function BotMessage<BotMessageProps>({ message, setResponse }) {
                       padding: "4px",
                       borderRadius: "0 0 6px 0",
                     }}
+                    onClick={() => {
+                      setCartItems((prevCartItems) => {
+                        return [...prevCartItems, rec];
+                      });
+                    }}
                   >
                     <ShoppingCartIcon />
                   </button>
@@ -447,7 +487,7 @@ const ChatBotWrapper = styled.div`
     bottom: 1rem;
     background: #d9d9d9;
     border-radius: 20px;
-    padding: 6px 8px 6px 16px;
+    padding: 6px 8px 6px 6px;
     display: flex;
     align-items: center;
     position: fixed;
