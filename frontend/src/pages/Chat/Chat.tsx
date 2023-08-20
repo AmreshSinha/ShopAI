@@ -4,12 +4,23 @@ import { Navbar } from "../../components/common/navbar";
 import { useLocation } from "react-router-dom";
 import Search from "./Search";
 import ChatBot from "./ChatBot";
+import axios from "axios";
 
 export default function Chat() {
   const location = useLocation();
   const userPref = location.state;
   const [queryAsked, setQueryAsked] = useState();
   const [cartItems, setCartItems] = useState([]);
+
+  React.useEffect(() => {
+    cartItems.length > 0 &&
+      axios.get("http://localhost:8000/cart-history", {
+        params: {
+          product_name: cartItems[cartItems.length - 1],
+        },
+      });
+  }, [cartItems]);
+
   return (
     <HomeWrapper>
       <Navbar cartItems={cartItems} setCartItems={setCartItems} />
