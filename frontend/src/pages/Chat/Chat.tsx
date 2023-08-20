@@ -12,14 +12,14 @@ export default function Chat() {
   const [queryAsked, setQueryAsked] = useState();
   const [cartItems, setCartItems] = useState([]);
 
-  React.useEffect(() => {
-    cartItems.length > 0 &&
-      axios.get("http://localhost:8000/cart-history", {
-        params: {
-          product_name: cartItems[cartItems.length - 1],
-        },
-      });
-  }, [cartItems]);
+  // React.useEffect(() => {
+  //   cartItems.length > 0 &&
+  //     axios.get("http://localhost:8000/cart-history", {
+  //       params: {
+  //         product_name: cartItems[cartItems.length - 1],
+  //       },
+  //     });
+  // }, [cartItems]);
 
   return (
     <HomeWrapper>

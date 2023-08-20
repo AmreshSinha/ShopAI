@@ -108,28 +108,28 @@ export default function ChatBot<ChatBotProps>({
     });
   }, []);
 
-  useEffect(() => {
-    if (localQueryAsked) {
-      axios
-        .get(`http://localhost:8000/items/${localQueryAsked}`, {
-          params: {
-            age: userPref.age,
-            location: userPref.state,
-            gender: userPref.gender.toLowerCase(),
-            user_instructions: userPref.extra,
-            curr_date: dateMonth,
-          },
-        })
-        .then((res) => {
-          if (res.data) {
-            setResponse((prevResponses) => {
-              setIsFirstCall(false);
-              return [...prevResponses, { role: "bot", response: res.data }];
-            });
-          }
-        });
-    }
-  }, [localQueryAsked]);
+  // useEffect(() => {
+  //   if (localQueryAsked) {
+  //     axios
+  //       .get(`http://localhost:8000/items/${localQueryAsked}`, {
+  //         params: {
+  //           age: userPref.age,
+  //           location: userPref.state,
+  //           gender: userPref.gender.toLowerCase(),
+  //           user_instructions: userPref.extra,
+  //           curr_date: dateMonth,
+  //         },
+  //       })
+  //       .then((res) => {
+  //         if (res.data) {
+  //           setResponse((prevResponses) => {
+  //             setIsFirstCall(false);
+  //             return [...prevResponses, { role: "bot", response: res.data }];
+  //           });
+  //         }
+  //       });
+  //   }
+  // }, [localQueryAsked]);
 
   console.log(response);
 
@@ -186,9 +186,9 @@ export default function ChatBot<ChatBotProps>({
           ]);
           setLocalQueryAsked(data.query as string);
           chatInputRef.current!.value = "";
-          if (localQueryAsked) {
+          if (data.query) {
             axios
-              .get(`http://localhost:8000/items/${localQueryAsked}`, {
+              .get(`http://localhost:8000/items/${data.query}`, {
                 params: {
                   age: userPref.age,
                   location: userPref.state,
@@ -458,6 +458,7 @@ function BotMessage<BotMessageProps>({ message, setResponse, setCartItems }) {
                       borderRadius: "0 0 6px 0",
                     }}
                     onClick={() => {
+                      axios.get(`http://localhost:8000/cart-history/${rec.product_name}`)
                       setCartItems((prevCartItems) => {
                         return [...prevCartItems, rec];
                       });
