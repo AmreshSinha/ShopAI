@@ -89,7 +89,7 @@ export default function Onboarding() {
               style={{ display: "flex", flexDirection: "column", gap: "6px" }}
             >
               <label htmlFor="gender" style={{ fontSize: "20px" }}>
-                Gender
+                Gender*
               </label>
               <Input type="text" name="gender" id="gender" required />
             </div>
@@ -97,7 +97,7 @@ export default function Onboarding() {
               style={{ display: "flex", flexDirection: "column", gap: "6px" }}
             >
               <label htmlFor="age" style={{ fontSize: "20px" }}>
-                Age
+                Age*
               </label>
               <Input type="number" name="age" id="age" required />
             </div>
@@ -105,7 +105,7 @@ export default function Onboarding() {
               style={{ display: "flex", flexDirection: "column", gap: "6px" }}
             >
               <label htmlFor="extra" style={{ fontSize: "20px" }}>
-                Extra
+                Any Specific Instructions
               </label>
               <textarea
                 name="extra"

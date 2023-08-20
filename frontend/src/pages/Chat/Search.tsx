@@ -92,8 +92,8 @@ export default function Search<SearchProps>({ setQueryAsked }) {
             >
               <PiMicrophone />
             </button>
-            <button type="submit">
-              Start <PiPaperPlaneRightFill />
+            <button type="submit" style={{ display: "flex", alignItems: "center" }}>
+              <p>Start</p><PiPaperPlaneRightFill />
             </button>
           </form>
         </div>
