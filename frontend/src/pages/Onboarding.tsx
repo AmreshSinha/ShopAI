@@ -35,6 +35,7 @@ export default function Onboarding() {
           });
       },
       function (error) {
+        setUserState("Guwahati")
         console.error("Error Code = " + error.code + " - " + error.message);
       }
     );

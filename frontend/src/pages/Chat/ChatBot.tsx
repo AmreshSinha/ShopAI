@@ -92,7 +92,7 @@ export default function ChatBot<ChatBotProps>({
           params: {
             age: userPref.age,
             location: userPref.state,
-            gender: userPref.age.toLowerCase(),
+            gender: userPref.gender.toLowerCase(),
             user_instructions: userPref.extra,
             curr_date: dateMonth,
           },
@@ -115,7 +115,7 @@ export default function ChatBot<ChatBotProps>({
           params: {
             age: userPref.age,
             location: userPref.state,
-            gender: userPref.age.toLowerCase(),
+            gender: userPref.gender.toLowerCase(),
             user_instructions: userPref.extra,
             curr_date: dateMonth,
           },
@@ -192,7 +192,7 @@ export default function ChatBot<ChatBotProps>({
                 params: {
                   age: userPref.age,
                   location: userPref.state,
-                  gender: userPref.age.toLowerCase(),
+                  gender: userPref.gender.toLowerCase(),
                   user_instructions: userPref.extra,
                   curr_date: dateMonth,
                 },
