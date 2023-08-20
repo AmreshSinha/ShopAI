@@ -79,12 +79,17 @@ messages=[]
 
 fashion_trends=[]
 
+default_cart_history=["Men Solid Round Neck Polyester White T-Shirt", "Flip Flops  (Black 9)", "Flip Flops  (Navy, Grey 9)", "Solid Men Track Suit"]
+cart_history=["Men Solid Round Neck Polyester White T-Shirt", "Flip Flops  (Black 9)", "Flip Flops  (Navy, Grey 9)", "Solid Men Track Suit"]
+
 @app.on_event('startup')
 def init_data():
     print("init call")
     global userData
+    global default_cart_history
     userData["purchase_history"] = ["Men Solid Round Neck Polyester White T-Shirt", "Flip Flops  (Black 9)", "Flip Flops  (Navy, Grey 9)", "Solid Men Track Suit", "LUX INFERNO Men Top Thermal", "Woven Beanie", "Men Solid Black Track Pants", "Jockey Men's Cotton Shorts (SP26-0103-BLACK Black L)", "Hygear Men's Xpress Olive green Slippers_10 UK (HG-GE-1004)", "Jockey Men's Tailored Fit Cotton Thermal Long John (2420-Black-S_Black_S)", "Li-Ning Ultra IV Non-Marking Cushion Badminton Shoe (White, Navy, 9 UK, Unisex)", "Bewakoof Men's Cotton Solid Solid Black and White Half Sleeves | Round Neck | Regular Fit T-Shirt/Tee, Black, White", "GRITSTONES Anthramelange Full Sleeves High Neck T-Shirt (Large) Dark Grey", "DAMENSCH Men's Boy Shorts (DAM-WWB-SHT-TLB-M_D.Lit Brown_M)", "513 Men Acrylic Woolen Casual Winter Wear Striped Knitted Warm Premium Mufflers Black", "513 Girl's Self-Design Mufflers (jd423mufwmrn_Multicolored_Free Size)", "Eden & Ivy Women's Cotton Knee Length Regular Nightgown", "Eden & Ivy Women's Cotton Knee Length Relaxed Nightgown"]
     userData["browsing_history"] = ["Jockey SP26 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Puma Unisex-Adult Jog V3 Flip-Flop", "Woodland Men's Off Slipper", "Woodland mens Flip Flop", "Campus Men's Flip Flops", "Adidas mens Adirio Attack Slipper", "Hygear mens Xpress Slipper", "Jockey 9426 Men's Super Combed Cotton Rich Regular Fit Solid Shorts with Side Pockets", "Jockey 9411 Men's Super Combed Cotton Rich Straight Fit Solid Shorts with Side Pockets", "Hygear mens Zodiac Slipper", "Hygear mens Xpress Slipper", "Red Tape Women's Walking Shoes", "Puma Womens Reflex WNS Running Shoe", "US Polo Association mens Facundo Flip-flop", "crazymonk One Piece Monkey D Luffy Round Neck Anime T-Shirt"]
+    userData["cart_history"] = default_cart_history
     global fashion_trends
     fashion_trends = open("./captions.txt", "r").readlines()
     for idx, caption in enumerate(fashion_trends):
@@ -131,7 +136,9 @@ Let us call this the USER_REQUEST_FORMAT.
 The explanations for the value of the keys in the User request JSON Object given in the USER_REQUEST_FORMAT format can be found below.
 	    < {{
             "past_purchases" : This will be an array of previous purchases of outfit items. use this to understand user's outfit preference strictly
-        "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
+        "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly,
+        "cart_history" : "This will be an array of product names, user has added to cart in the online ecommerce platform. from this understand what is user preferences for your recommended tags\n
+        use this to decide new tags for newer responses."
         "gender" : This value represents the gender of the user.
         "trends" : This will be an array containing clothing categories currently trending among people.
         "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before. User may have explained you the purpose of buying to try to use that as occasion for recommending
@@ -228,7 +235,7 @@ def chatgpt_query(userQuery):
     global messages
     messages.append({'role' : 'user','content' : userQuery})
     response = openai.ChatCompletion.create(
-    model="gpt-4",
+    model="gpt-3.5-turbo-0613",
     messages=messages,
     temperature=0)
     #print(response['choices'][0]['message']['content'])
@@ -249,9 +256,11 @@ def chatgpt_query(userQuery):
 @app.get("/items/{userQuery}")
 def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_date:str,userQuery:str):
 
+    global cart_history
     user_requests = {
 		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
 		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
+          "cart_histroy" : cart_history,
           "age" : age,
 		  "gender" : gender,
 		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
@@ -271,7 +280,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     }
 
     messages.append(user_message)
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     print(chat_completion['choices'][0]['message']['content'])
     print(type(chat_completion['choices'][0]['message']['content']))
@@ -331,7 +340,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
 def regenerate_item(search_query, product_name):
     messages.append({'role' : 'system','content' : f'''your recomendation had {search_query} in it and item based on that searchable tag fetched from online e-commerce store was not liked by user and fetched product name is {product_name}.\n
     you have to change this recommendation after analyzing the reasons why this tag couldn't have worked and this product name got recommended and generate new one afterwards. you only speak JSON and have to return the response in format : """"{{"tag" : "new tag recommended by you}}""" strictly without any deviation'''})
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
     print(gpt_response)
@@ -358,6 +367,8 @@ def clear():
     global messages
     global fashion_trends
     global userData
+    global cart_history
+    cart_history=default_cart_history
     print(fashion_trends)
     messages.clear()
     messages = [
@@ -394,6 +405,7 @@ def clear():
                 {
                 "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
                 "browsing_history" : ["Oversized Tshirts","Red Trousers"],
+                "cart_history" : {cart_history},
                 "gender" : "Male",
                 "trends" : {fashion_trends},
                 "user_request" : "Suggest an outfit for a diwali party"
@@ -409,6 +421,8 @@ def clear():
         The explanations for the value of the keys in the User request JSON Object given in the USER_REQUEST_FORMAT format can be found below.
                 "past_purchases" : This will be an array of previous purchases of outfit items. use this to understand user's outfit preference strictly
                 "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
+                "cart_history" : "This will be an array of product names, user has added to cart in the online ecommerce platform. from this understand what is user preferences for your recommended tags\n
+                use this to decide new tags for newer responses."
                 "gender" : This value represents the gender of the user.
                 "trends" : This will be an array containing clothing categories currently trending among people.
                 "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before. Understand this value to see if user has already specified occasion or event if yes, then recommend accordingly or else ask question in ASSISTANT_QUESTION_FORMAT
@@ -449,6 +463,13 @@ def clear():
    ]
     return { "status": "success" }
 
+@app.get("/cart-history/{product_name}")
+def save_cart_history(product_name: str):
+    print(product_name)
+    global cart_history
+    cart_history.append(product_name)
+    return { "status": "success" }
+
 
 def send_message(body_text):
     global twilio_client
@@ -473,10 +494,11 @@ def check_user_details_empty():
 
 
 def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:str,curr_date:str,userQuery:str):
-
+    global cart_history
     user_requests = {
 		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
 		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
+          "cart_history" : cart_history,
           "age" : age,
 		  "gender" : gender,
 		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
@@ -493,7 +515,7 @@ def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:s
     }
 
     messages.append(user_message)
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     gpt_response=""
     try:
@@ -584,8 +606,9 @@ def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:s
     print(formatted_response)
     for item in response["recommendations"]:
         print(item)
-        item_descp= f"""{item['product_name']} \n Link: {item["product_link"]} \n\n"""
-        formatted_response=formatted_response+item_descp
+        if 'product_link' in item and 'product_name' in item:
+            item_descp= f"""{item['product_name']} \n Link: {item["product_link"]} \n\n"""
+            formatted_response=formatted_response+item_descp
 
     return formatted_response
 
@@ -632,7 +655,7 @@ def get_trends():
         {{"fashion_trends" : ["array items should be name of fashion clothes currently trending after your analysis of this array.]}} \n
         and there should not be any extra text in your response'''
     }]
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=trend_messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=trend_messages)
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
     return gpt_response
