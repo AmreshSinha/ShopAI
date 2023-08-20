@@ -99,7 +99,7 @@ def init_data():
     messages=[
        {
             "role": 'system',
-            "content": """You are a fashion assistant at an online fashion e-commerce website. You only speak JSON and strictly don't add any extra text without any deviation and all responses should be in JSON format strictly and the JSON Object should be of one of the following two types delimeted in angle brackets:
+            "content": """You are a fashion assistant at an online fashion e-commerce website. You only speak JSON and all responses should be in JSON format strictly and the JSON Object should be of one of the following two types delimeted in angle brackets:
 1. < ASSISTANT_QUESTION_FORMAT >: The example for this format is given below enclosed in triple backticks:
 
 '''
@@ -125,12 +125,25 @@ The explanation for the values of the keys in ASSISTANT_OUTPUT_FORMAT are as fol
 "gender" : The gender of the user (male, female or unisex).
 "occasion": The occasion for which the user wants the outfit.
 "assistant _notes": These are the notes that you may generate while deciding the perfect outfit for the user.
-To specify the user's details you will be given a RFC8259 compliant json object along with the request from the user in next message. The request json will always be in the format as shown in the example below enclosed in backticks.
+To specify the user's details you will be given a RFC8259 compliant json object along with the request from the user. The request json will always be in the format as shown in the example below enclosed in backticks.
+'''
+		{
+		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
+		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
+		  "gender" : "Male",
+		  "trends" : {fashion_trends},
+		  "user_request" : "Suggest an outfit for a diwali party"
+		  "user_instructions" : "Don't Suggest slim fit clothes",
+		  "location" : "Mumbai",
+		  "date": "10/08/2023",
+          "age": "23"
+		  "budget"  : "5000"
+        	}
+	'''
 
 Let us call this the USER_REQUEST_FORMAT.
 The explanations for the value of the keys in the User request JSON Object given in the USER_REQUEST_FORMAT format can be found below.
-	    < {{
-            "past_purchases" : This will be an array of previous purchases of outfit items. use this to understand user's outfit preference strictly
+	    "past_purchases" : This will be an array of previous purchases of outfit items. use this to understand user's outfit preference strictly
         "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
         "gender" : This value represents the gender of the user.
         "trends" : This will be an array containing clothing categories currently trending among people.
@@ -142,7 +155,6 @@ The explanations for the value of the keys in the User request JSON Object given
         "budget" : "This value determines the budget of the user. if user has specified budget value in earlier messages then, append budget value in your recommended tags strictly \n
         without any deviation as this will help in efficient searchablity on e-commerce website online. for example: user budget is 5000 then add budget values acoording to approximate prices you have guessed for each outfit component\n
         'Tshirt for men under 500 <this 500 here will be the approximate price of outfit component you have thought in the total budget>' as a tag recommended. assume 10000 as default total budget if not specified in messages."
-        }} >
           
 If you wish to ask any question to the user. ask it as a RFC8259 compliant json object in  ASSISTANT_QUESTION_FORMAT format specified before.
 
@@ -170,11 +182,10 @@ Please give the recommendations as a set of searchable tags which can be then se
         }''' and user's gender is "Male" and age "23" then, modify your ASSISTANT_OUTPUT_FORMAT output by appending user's "gender" to every item in recommendation array. for ex:
         ''''{
             "recommendation" : ["tshirt for Men/Male age 23","jeans for Women/Female age 23"]
-        }'''
-
+        }'''   
 Please give the recommendations as a set of searchable tags which can be then searched directly on ecommerce website. Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending outfit.
 The output should always be given as a RFC8259 compliant JSON response in the ASSISTANT_OUTPUT_FORMAT format specified at the start of the message.
-Strictly give response as 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user's request will follow this message
+Do not return anything response which are not in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user's request will follow this message
 """}
    ]
 
@@ -228,7 +239,7 @@ def chatgpt_query(userQuery):
     global messages
     messages.append({'role' : 'user','content' : userQuery})
     response = openai.ChatCompletion.create(
-    model="gpt-4",
+    model="gpt-3.5-turbo",
     messages=messages,
     temperature=0)
     #print(response['choices'][0]['message']['content'])
@@ -252,7 +263,6 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
     user_requests = {
 		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
 		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
-          "age" : age,
 		  "gender" : gender,
 		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
 		  "user_request" : userQuery,
@@ -262,21 +272,16 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
 		  "budget"  : "10000"
         }
     
-    print(user_requests)
-
     user_message = {
         "role": "user",
-        "content": f"""My details in USER_REQUEST_FORMAT format is {user_requests}. take out all the details like \n
-        gender, location, past_purchases, browsing_history, trends, user_request, user_instructions, date, budget from the this and use it to generate the output."""
+        "content": json.dumps(user_requests)
     }
 
     messages.append(user_message)
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
-    print(chat_completion['choices'][0]['message']['content'])
-    print(type(chat_completion['choices'][0]['message']['content']))
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
-    print(gpt_response)
+    print(gpt_response);
     if "question" in gpt_response:
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["question"])})
         return gpt_response
@@ -331,7 +336,7 @@ def scrape_flipkart(age:int,location:str,gender:str,user_instructions:str,curr_d
 def regenerate_item(search_query, product_name):
     messages.append({'role' : 'system','content' : f'''your recomendation had {search_query} in it and item based on that searchable tag fetched from online e-commerce store was not liked by user and fetched product name is {product_name}.\n
     you have to change this recommendation after analyzing the reasons why this tag couldn't have worked and this product name got recommended and generate new one afterwards. you only speak JSON and have to return the response in format : """"{{"tag" : "new tag recommended by you}}""" strictly without any deviation'''})
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
     print(gpt_response)
@@ -357,13 +362,12 @@ def regenerate_item(search_query, product_name):
 def clear():
     global messages
     global fashion_trends
-    global userData
     print(fashion_trends)
     messages.clear()
     messages = [
             {
                     "role": 'system',
-                    "content": """You are a fashion assistant at an online fashion e-commerce website. You only speak JSON and don't add any extra text without any deviation and all responses should be in JSON format strictly and the JSON Object should be of one of the following two types delimeted in angle brackets:
+                    "content": """You are a fashion assistant at an online fashion e-commerce website. You only speak JSON and all responses should be in JSON format strictly and the JSON Object should be of one of the following two types delimeted in angle brackets:
         1. < ASSISTANT_QUESTION_FORMAT >: The example for this format is given below enclosed in triple backticks:
 
         '''
@@ -411,8 +415,8 @@ def clear():
                 "browsing_history" : This will be an array of names of the items searched by the user online in the past. Analyze this to understand the user's outfit preferences and you are strictly not supposed to recommend these names directly.
                 "gender" : This value represents the gender of the user.
                 "trends" : This will be an array containing clothing categories currently trending among people.
-                "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before. Understand this value to see if user has already specified occasion or event if yes, then recommend accordingly or else ask question in ASSISTANT_QUESTION_FORMAT
-                "user_instructions" : Some specific instructions from the user aboudt the clothes that they wants. You are strictly supposed to follow these instructions. Do not generate responses that does not follow these instructions. You can ask for clarifications from user by asking questions in the ASSISTANT_QUESTION_FORMAT and try to ask relevant questions only.
+                "user_request" : This field contains the actual request from the user. It must contain the occasion for which the user is requesting an outfit. If it doesn't contain the occasion, ask for the occasion in the format for questioning ( ASSISTANT_QUESTION_FORMAT) specified before. User may have explained you the purpose of buying to try to use that as occasion for recommending
+                "user_instructions" : Some specific instructions from the user about the clothes that they wants. You are strictly supposed to follow these instructions. Do not generate responses that does not follow these instructions. You can ask for clarifications from user by asking questions in the ASSISTANT_QUESTION_FORMAT and try to ask relevant questions only.
                 "location" : User's geographic location.
                 "date": The date when the user makes a request. Use the location field's value and the date provided value to decide recommendations which can be worn in the weather in that location around this date. Also look for major events around that date in that location and make suggestions accordingly.
                 "age": The age of the user
@@ -443,7 +447,8 @@ def clear():
             "recommendation" : ["tshirt for Men/Male age 23","jeans for Women/Female age 23"]
         }'''       
         . Please strictly adhere to the nature of the occasion being specified ( i.e whether it is traditional, formal etc) while recommending outfit. The output should always be given as a \n
-        RFC8259 compliant JSON response. Strictly give response as 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user's request will follow this message
+        RFC8259 compliant JSON response in the ASSISTANT_OUTPUT_FORMAT format specified at the start of the message. Do not return anything response which are not \n
+        in the 2 JSON Object formats specified at the start of the message namely: ASSISTANT_OUTPUT_FORMAT and ASSISTANT_QUESTION_FORMAT. The user's request will follow this message
         you can use emojis in the responses
         """}
    ]
@@ -477,7 +482,6 @@ def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:s
     user_requests = {
 		  "past_purchases" : ["black colored full sleeved chinos","Red Sport Shoes"],
 		  "browsing_history" : ["Oversized Tshirts","Red Trousers"],
-          "age" : age,
 		  "gender" : gender,
 		  "trends" : ["Oversized Printed Tshirts", "Ripped Jeans"],
 		  "user_request" : userQuery,
@@ -493,7 +497,7 @@ def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:s
     }
 
     messages.append(user_message)
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=messages)
     print(chat_completion)
     gpt_response=""
     try:
@@ -508,8 +512,6 @@ def scrape_flipkart_whatsapp(age:int,location:str,gender:str,user_instructions:s
         print(gpt_response["question"])
         return gpt_response["question"]
     elif "recommendation" in gpt_response:
-        print("FSLKLSDGKLDLKSLD")
-        print(gpt_response["recommendation"])
         print(gpt_response["recommendation"])
         messages.append({'role' : 'assistant','content' : json.dumps(gpt_response["recommendation"])})
     elif type(gpt_response)==list:
@@ -632,7 +634,7 @@ def get_trends():
         {{"fashion_trends" : ["array items should be name of fashion clothes currently trending after your analysis of this array.]}} \n
         and there should not be any extra text in your response'''
     }]
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=trend_messages)
+    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=trend_messages)
     print(chat_completion)
     gpt_response = json.loads(chat_completion['choices'][0]['message']['content'])
     return gpt_response
