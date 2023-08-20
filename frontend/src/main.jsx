@@ -6,7 +6,6 @@ import Onboarding from "./pages/Onboarding";
 // import App from "./App.jsx";
 import "./index.css";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
-import { Navbar } from "./components/common/navbar";
 import Chat from "./pages/Chat/Chat";
 
 const router = createBrowserRouter([
